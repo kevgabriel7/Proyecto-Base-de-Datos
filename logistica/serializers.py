@@ -87,8 +87,7 @@ class RastreoPublicoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Envios
-        # ojo: a propósito NO exponemos costo, remitente, ni dirección exacta —
-        # es público, cualquiera con el tracking lo puede consultar
+        
         fields = [
             'numero_tracking', 'estado', 'servicio', 'via',
             'ciudad_origen', 'ciudad_destino', 'nombre_destinatario',
@@ -116,7 +115,6 @@ class ViaEnvioSerializer(serializers.ModelSerializer):
 
 
 class AnunciarPaqueteSerializer(serializers.Serializer):
-    """No es un ModelSerializer: valida el input del cliente para armar un envío nuevo."""
     id_ciudad_origen = serializers.IntegerField()
     id_ciudad_destino = serializers.IntegerField()
     id_tipo_servicio = serializers.IntegerField()

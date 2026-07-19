@@ -77,8 +77,6 @@ class ConfiguracionesSarAdmin(admin.ModelAdmin):
 # RUTAS, ZONAS Y REPARTO
 # ==================================================================
 class RutaZonasInline(admin.TabularInline):
-    # RutaZonas tiene llave primaria compuesta (id_ruta, id_zona) y no se
-    # puede registrar directo en el admin, pero sí como inline de Rutas.
     model = RutaZonas
     extra = 1
 

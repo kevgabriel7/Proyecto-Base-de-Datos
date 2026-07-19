@@ -1,4 +1,3 @@
-# Create your views here.
 from decimal import Decimal
 from django.utils import timezone
 from rest_framework.decorators import api_view, permission_classes
@@ -17,7 +16,7 @@ import traceback
 from .models import (
     Clientes, Envios, Facturas, Ciudades, Seguimiento, TiposServicio,
     ViasEnvio, Tarifas, EstadosEnvio, Paquetes, Sucursales, Rutas,
-    TiposCliente,   # ← necesario para catalogos_view
+    TiposCliente,  
 )
 from .serializers import (
     ClientePerfilSerializer, EnvioListSerializer, EnvioDetailSerializer,
@@ -26,7 +25,6 @@ from .serializers import (
     AnunciarPaqueteSerializer,
 )
 
-# Divisor volumétrico estándar IATA para envíos aéreos: cm³ / kg
 DIVISOR_VOLUMETRICO_AEREO = Decimal('5000')
 
 
@@ -57,7 +55,6 @@ class RegistroClienteView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        # ── Campos obligatorios ──────────────────────────────────────────────
         email = request.data.get('email')
         password = request.data.get('password')
         primer_nombre = request.data.get('primer_nombre')
@@ -90,21 +87,18 @@ class RegistroClienteView(APIView):
                 status=status.HTTP_409_CONFLICT,
             )
 
-        # ── Campos opcionales (todos nullable en la BD) ──────────────────────
-        segundo_nombre  = request.data.get('segundo_nombre') or None
+        segundo_nombre = request.data.get('segundo_nombre') or None
         segundo_apellido = request.data.get('segundo_apellido') or None
-        rtn             = request.data.get('rtn') or None
-        telefono        = request.data.get('telefono') or None
-        direccion       = request.data.get('direccion') or None
-        id_ciudad       = request.data.get('id_ciudad') or None   # FK nullable
+        rtn = request.data.get('rtn') or None
+        telefono = request.data.get('telefono') or None
+        direccion = request.data.get('direccion') or None
+        id_ciudad = request.data.get('id_ciudad') or None 
 
-        # razon_social es NOT NULL en la tabla; si no la manda (cliente normal)
-        # la armamos con nombre + apellido.
         razon_social = request.data.get('razon_social') or None
         if not razon_social:
             razon_social = f"{primer_nombre} {primer_apellido}".strip()
 
-        # Validar unicidad de RTN si lo manda
+
         if rtn and Clientes.objects.filter(rtn=rtn).exists():
             return Response(
                 {'detail': 'El RTN ingresado ya está registrado en otra cuenta.'},
@@ -181,11 +175,7 @@ class RastreoPublicoView(generics.RetrieveAPIView):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def catalogos_view(request):
-    """
-    Devuelve todos los catálogos que el portal de cliente necesita.
-    Se añadió tipos_cliente para que el formulario de registro los cargue
-    dinámicamente en lugar de tener IDs hardcodeados en el HTML.
-    """
+
     tarifas_activas = Tarifas.objects.filter(activa=True).values(
         'id_ciudad_origen', 'id_ciudad_destino', 'id_tipo_servicio', 'id_via',
         'peso_min_kg', 'peso_max_kg',
@@ -197,8 +187,7 @@ def catalogos_view(request):
         'tipos_servicio': TipoServicioSerializer(TiposServicio.objects.all(), many=True).data,
         'vias_envio': ViaEnvioSerializer(ViasEnvio.objects.all(), many=True).data,
         'tarifas_disponibles': list(tarifas_activas),
-        # ← nuevo: permite que el HTML renderice el <select> de tipos_cliente
-        #   con los IDs reales de la BD (Normal, Corporativo, VIP, Mayorista…)
+
         'tipos_cliente': list(
             TiposCliente.objects.values('id_tipo_cliente', 'nombre', 'descripcion')
         ),
@@ -216,13 +205,10 @@ class AnunciarPaqueteView(APIView):
         ancho = d['ancho_cm']
         alto = d['alto_cm']
 
-        # Campos opcionales de envios que el serializer no valida:
-        # se leen directamente de request.data para no romper el contrato
-        # del serializer existente.
         fecha_estimada = request.data.get('fecha_estimada') or None
         observaciones  = request.data.get('observaciones') or None
 
-        # ── Peso volumétrico y peso cobrable ────────────────────────────────
+
         via_pk = d['id_via'].pk if hasattr(d['id_via'], 'pk') else int(d['id_via'])
         via_obj = ViasEnvio.objects.get(pk=via_pk)
         es_aerea = 'aérea' in via_obj.nombre.lower() or 'aerea' in via_obj.nombre.lower()
@@ -237,7 +223,7 @@ class AnunciarPaqueteView(APIView):
             peso_volumetrico = None
             peso_cobrable    = peso
 
-        # ── Tarifa ──────────────────────────────────────────────────────────
+
         tarifa = Tarifas.objects.filter(
             id_via=d['id_via'],
             id_tipo_servicio=d['id_tipo_servicio'],
@@ -254,7 +240,6 @@ class AnunciarPaqueteView(APIView):
                 status=status.HTTP_422_UNPROCESSABLE_ENTITY,
             )
 
-        # ── Costo ───────────────────────────────────────────────────────────
         if es_aerea:
             costo = tarifa.precio_base_hnl + (peso_cobrable * tarifa.precio_por_kg_hnl)
         else:
@@ -264,7 +249,6 @@ class AnunciarPaqueteView(APIView):
                 + (volumen_m3 * tarifa.precio_por_m3_hnl)
             )
 
-        # ── Sucursales y ruta ────────────────────────────────────────────────
         sucursal_origen  = Sucursales.objects.filter(id_ciudad=d['id_ciudad_origen'], activa=True).first()
         sucursal_destino = Sucursales.objects.filter(id_ciudad=d['id_ciudad_destino'], activa=True).first()
         if not sucursal_origen or not sucursal_destino:
@@ -305,9 +289,8 @@ class AnunciarPaqueteView(APIView):
                 descuento_hnl=Decimal('0'),
                 costo_total_hnl=costo,
                 fecha_recepcion=timezone.now(),
-                # Campos opcionales del formulario de cliente
-                fecha_estimada=fecha_estimada,  # DATE nullable
-                observaciones=observaciones,    # TEXT nullable
+                fecha_estimada=fecha_estimada, 
+                observaciones=observaciones,    
             )
             Paquetes.objects.create(
                 id_envio=envio,
