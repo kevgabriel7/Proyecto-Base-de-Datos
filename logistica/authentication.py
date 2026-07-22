@@ -4,8 +4,7 @@ from .models import Clientes
 
 
 class ClienteJWTAuthentication(JWTAuthentication):
-    """Autentica el token JWT contra la tabla clientes, no contra auth_user."""
-
+   
     def get_user(self, validated_token):
         try:
             cliente_id = validated_token['id_cliente']
