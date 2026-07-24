@@ -1,10 +1,74 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login as django_login, logout as django_logout
+from django.contrib.auth.models import User
+from django.contrib.auth.hashers import check_password
 from .models import Clientes, Sucursales, Envios, Facturas, Seguimiento, Usuarios, Paquetes, Tarifas
+
+
+def get_cliente_actual(request):
+    """Devuelve el Cliente logueado en esta sesión, o None si no hay nadie logueado."""
+    id_cliente = request.session.get('id_cliente')
+    if not id_cliente:
+        return None
+    try:
+        return Clientes.objects.get(id_cliente=id_cliente, activo=True)
+    except Clientes.DoesNotExist:
+        return None
+
+
+def home_redirect(request):
+    if request.session.get('id_cliente'):
+        return redirect('portal_cliente')
+    return redirect('login')
+
+
+def login_view(request):
+    error = None
+
+    if request.method == 'POST':
+        identificador = request.POST.get('email', '').strip()
+        password = request.POST.get('password', '')
+
+        # 1) Intentar como staff (auth.User de Django -> panel admin)
+        user = authenticate(request, username=identificador, password=password)
+        if user is None:
+            try:
+                u = User.objects.get(email=identificador)
+                user = authenticate(request, username=u.username, password=password)
+            except User.DoesNotExist:
+                user = None
+
+        if user is not None and user.is_staff:
+            django_login(request, user)
+            return redirect('/admin/')
+
+        # 2) Intentar como cliente
+        try:
+            cliente = Clientes.objects.get(email=identificador, activo=True)
+        except Clientes.DoesNotExist:
+            cliente = None
+
+        if cliente and cliente.password_hash and check_password(password, cliente.password_hash):
+            request.session['id_cliente'] = cliente.id_cliente
+            return redirect('portal_cliente')
+
+        error = 'Correo o contraseña incorrectos.'
+
+    return render(request, 'logistica/login.html', {'error': error})
+
+
+def logout_view(request):
+    request.session.flush()
+    django_logout(request)
+    return redirect('login')
+
 
 def portal_cliente(request):
 
-    cliente = Clientes.objects.first() #Esta es una prueba con el primer cliente que esta en la base de datos porque no hay login
-    
+    cliente = get_cliente_actual(request)
+    if not cliente:
+        return redirect('login')
+
     sucursal_miami = Sucursales.objects.filter(nombre__icontains='Miami').first()
 
     nombre_completo = ""
@@ -39,10 +103,12 @@ def portal_cliente(request):
     return render(request, 'logistica/portal_cliente.html', context)
 
 def mis_paquetes(request):
-    cliente = Clientes.objects.first()
+    cliente = get_cliente_actual(request)
+    if not cliente:
+        return redirect('login')
     from .models import Envios
-    
-    envios = Envios.objects.filter(id_cliente=cliente) if cliente else []
+
+    envios = Envios.objects.filter(id_cliente=cliente)
     
     context = {
         'paquetes': envios,
@@ -78,11 +144,13 @@ def rastreo(request):
     return render(request, 'logistica/rastreo.html', context)
 
 def facturas(request):
-    cliente = Clientes.objects.first()
+    cliente = get_cliente_actual(request)
+    if not cliente:
+        return redirect('login')
     from .models import Facturas
-    
+
     # Jalamos las facturas reales del cliente
-    facturas_lista = Facturas.objects.filter(id_cliente=cliente).order_by('-fecha_emision') if cliente else []
+    facturas_lista = Facturas.objects.filter(id_cliente=cliente).order_by('-fecha_emision')
     
     context = {
         'facturas': facturas_lista,
@@ -90,7 +158,9 @@ def facturas(request):
     return render(request, 'logistica/facturas.html', context)
 
 def mis_datos(request):
-    cliente = Clientes.objects.first()
+    cliente = get_cliente_actual(request)
+    if not cliente:
+        return redirect('login')
     from .models import Ciudades
     
     ciudades = Ciudades.objects.all()
