@@ -8,4 +8,8 @@ urlpatterns = [
     path('facturas/', views.facturas, name='facturas'),
     path('mis-datos/', views.mis_datos, name='mis_datos'),
     path('calculadora/', views.calculadora, name='calculadora'),
+    path('admin-portal/', views.portal_empleado, name='portal_empleado'),
+    path('admin-portal/recepcion/', views.recepcion_paquetes, name='recepcion_paquetes'),
+    path('admin-portal/tracking/', views.actualizar_rastreo, name='actualizar_rastreo'),
+    path('admin-portal/caja/', views.facturacion_sar, name='facturacion_sar'),
 ]

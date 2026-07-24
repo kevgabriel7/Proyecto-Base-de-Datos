@@ -1,0 +1,90 @@
+{% extends 'logistica/base_empleado.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-0">Panel de Control Administrativo</h3>
+        <p class="text-muted">Bienvenido, {{ nombre_empleado }} ({{ rol }})</p>
+    </div>
+    <div>
+        <span class="badge bg-primary fs-6">{{ sucursal }}</span>
+    </div>
+</div>
+
+<div class="row g-4 mt-2">
+    <!-- Módulo Recepción -->
+    <div class="col-md-4">
+        <a href="{% url 'recepcion_paquetes' %}" class="text-decoration-none">
+            <div class="card admin-card h-100 border-start border-primary border-4">
+                <div class="card-body py-5 px-4 text-center">
+                    <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-4" style="width: 80px; height: 80px;">
+                        <i class="bi bi-box-seam text-primary" style="font-size: 2rem;"></i>
+                    </div>
+                    <h5 class="card-title fw-bold text-dark">Recepción de Paquetes</h5>
+                    <p class="card-text text-muted small mt-3">Registra nuevos envíos, ingresa dimensiones y calcula fletes.</p>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Módulo Tracking -->
+    <div class="col-md-4">
+        <a href="{% url 'actualizar_rastreo' %}" class="text-decoration-none">
+            <div class="card admin-card h-100 border-start border-warning border-4">
+                <div class="card-body py-5 px-4 text-center">
+                    <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-4" style="width: 80px; height: 80px;">
+                        <i class="bi bi-upc-scan text-warning" style="font-size: 2rem;"></i>
+                    </div>
+                    <h5 class="card-title fw-bold text-dark">Escanear Rastreo</h5>
+                    <p class="card-text text-muted small mt-3">Actualiza el estado de los paquetes mediante número de guía.</p>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Módulo Caja/SAR -->
+    <div class="col-md-4">
+        <a href="{% url 'facturacion_sar' %}" class="text-decoration-none">
+            <div class="card admin-card h-100 border-start border-success border-4">
+                <div class="card-body py-5 px-4 text-center">
+                    <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-4" style="width: 80px; height: 80px;">
+                        <i class="bi bi-receipt text-success" style="font-size: 2rem;"></i>
+                    </div>
+                    <h5 class="card-title fw-bold text-dark">Facturación SAR</h5>
+                    <p class="card-text text-muted small mt-3">Emite facturas y cobra envíos pendientes de pago.</p>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header bg-white border-0 pt-4 pb-0 px-4">
+                <h5 class="fw-bold"><i class="bi bi-activity text-primary"></i> Resumen de Operaciones (Hoy)</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <h2 class="fw-bold text-dark">{{ total_envios_hoy }}</h2>
+                        <p class="text-muted small text-uppercase">Envíos Recibidos</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h2 class="fw-bold text-success">L. {{ ingresos_hoy|floatformat:2 }}</h2>
+                        <p class="text-muted small text-uppercase">Ingresos Facturados</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h2 class="fw-bold text-warning">{{ paquetes_transito }}</h2>
+                        <p class="text-muted small text-uppercase">En Tránsito</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h2 class="fw-bold text-info">{{ entregados_hoy }}</h2>
+                        <p class="text-muted small text-uppercase">Entregados Hoy</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

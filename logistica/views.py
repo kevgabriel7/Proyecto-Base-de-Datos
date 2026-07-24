@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from .models import Clientes, Sucursales
+from .models import Clientes, Sucursales, Envios, Facturas, Seguimiento, Usuarios, Paquetes, Tarifas
 
 def portal_cliente(request):
 
@@ -168,3 +168,239 @@ def calculadora(request):
         'datos_post': request.POST if request.method == 'POST' else None
     }
     return render(request, 'logistica/calculadora.html', context)
+def portal_empleado(request):
+    from django.utils import timezone
+    
+    # Harcoded employee for simplicity as requested by user
+    empleado = Usuarios.objects.filter(id_rol__nombre__icontains='empleado').first()
+    if not empleado:
+        empleado = Usuarios.objects.first()
+        
+    hoy = timezone.now().date()
+    
+    # Stats
+    total_envios_hoy = Envios.objects.filter(fecha_recepcion__date=hoy).count()
+    ingresos_hoy = sum(f.total_hnl for f in Facturas.objects.filter(fecha_emision__date=hoy, anulada=False))
+    paquetes_transito = Envios.objects.exclude(id_estado_actual__es_estado_final=True).count()
+    entregados_hoy = Seguimiento.objects.filter(fecha_evento__date=hoy, id_estado__es_estado_final=True).count()
+    
+    context = {
+        'nombre_empleado': f"{empleado.primer_nombre} {empleado.primer_apellido}" if empleado else "Admin",
+        'rol': empleado.id_rol.nombre if empleado and empleado.id_rol else "Administrador",
+        'sucursal': empleado.id_sucursal.nombre if empleado and empleado.id_sucursal else "Bodega Central",
+        'total_envios_hoy': total_envios_hoy,
+        'ingresos_hoy': ingresos_hoy,
+        'paquetes_transito': paquetes_transito,
+        'entregados_hoy': entregados_hoy,
+    }
+    return render(request, 'logistica/portal_empleado.html', context)
+
+from django.contrib import messages
+from django.shortcuts import redirect
+import uuid
+from decimal import Decimal
+
+def recepcion_paquetes(request):
+    from .models import Clientes, ViasEnvio, TiposServicio, EstadosEnvio, Sucursales, Ciudades, Envios, Paquetes, Rutas, Tarifas, Usuarios
+    
+    if request.method == 'POST':
+        # Recoger datos
+        id_cliente = request.POST.get('id_cliente')
+        id_via = request.POST.get('id_via')
+        id_tipo_servicio = request.POST.get('id_tipo_servicio')
+        descripcion = request.POST.get('descripcion')
+        valor_declarado = request.POST.get('valor_declarado')
+        largo = Decimal(request.POST.get('largo'))
+        ancho = Decimal(request.POST.get('ancho'))
+        alto = Decimal(request.POST.get('alto'))
+        peso_real = Decimal(request.POST.get('peso_real'))
+        
+        cliente = Clientes.objects.get(pk=id_cliente)
+        via = ViasEnvio.objects.get(pk=id_via)
+        servicio = TiposServicio.objects.get(pk=id_tipo_servicio)
+        
+        # Valores por defecto para la simulacion
+        estado_inicial = EstadosEnvio.objects.first() # Asumiendo el primero es Recibido
+        sucursal_origen = Sucursales.objects.filter(nombre__icontains='Miami').first()
+        sucursal_destino = Sucursales.objects.exclude(nombre__icontains='Miami').first()
+        ciudad_origen = sucursal_origen.id_ciudad
+        ciudad_destino = sucursal_destino.id_ciudad
+        ruta = Rutas.objects.first()
+        tarifa = Tarifas.objects.first()
+        creado_por = Usuarios.objects.first()
+        
+        # Crear Envio
+        from django.utils import timezone
+        nuevo_envio = Envios.objects.create(
+            numero_tracking=uuid.uuid4(),
+            id_cliente=cliente,
+            id_via=via,
+            id_tipo_servicio=servicio,
+            id_estado_actual=estado_inicial,
+            id_ciudad_origen=ciudad_origen,
+            id_ciudad_destino=ciudad_destino,
+            id_sucursal_origen=sucursal_origen,
+            id_sucursal_destino=sucursal_destino,
+            id_ruta=ruta,
+            id_tarifa=tarifa,
+            nombre_remitente='BODEGA MIAMI',
+            nombre_destinatario=f'{cliente.primer_nombre} {cliente.primer_apellido}',
+            telefono_destinatario=cliente.telefono,
+            direccion_destino=cliente.direccion or 'Conocido',
+            valor_declarado_hnl=valor_declarado,
+            descuento_hnl=0,
+            fecha_recepcion=timezone.now(),
+            creado_por=creado_por
+        )
+        
+        # Calcular pesos
+        volumen = (largo * ancho * alto) / Decimal(1000000)
+        peso_volumetrico = (largo * ancho * alto) / Decimal(5000) # factor estandar aereo
+        peso_cobrable = max(peso_real, peso_volumetrico)
+        
+        # Crear Paquete
+        Paquetes.objects.create(
+            id_envio=nuevo_envio,
+            numero_paquete=1,
+            descripcion_contenido=descripcion,
+            largo_cm=largo,
+            ancho_cm=ancho,
+            alto_cm=alto,
+            peso_real_kg=peso_real,
+            peso_volumetrico_kg=peso_volumetrico,
+            peso_cobrable_kg=peso_cobrable
+        )
+        
+        messages.success(request, f'Paquete registrado con éxito. Tracking: {nuevo_envio.numero_tracking}')
+        return redirect("recepcion_paquetes")
+        
+    context = {
+        'clientes': Clientes.objects.all(),
+        'vias': ViasEnvio.objects.all(),
+        'servicios': TiposServicio.objects.all(),
+    }
+    return render(request, "logistica/recepcion.html", context)
+
+def actualizar_rastreo(request):
+    from .models import EstadosEnvio, Envios, Seguimiento, Usuarios
+    from django.utils import timezone
+    from django.core.exceptions import ValidationError
+    
+    if request.method == 'POST':
+        tracking_str = request.POST.get('tracking')
+        id_estado = request.POST.get('id_estado')
+        ubicacion = request.POST.get('ubicacion')
+        
+        try:
+            envio = Envios.objects.get(numero_tracking=tracking_str)
+            estado = EstadosEnvio.objects.get(pk=id_estado)
+            creado_por = Usuarios.objects.first()
+            
+            # Actualizar el estado del envio principal
+            envio.id_estado_actual = estado
+            envio.save()
+            
+            # Crear el evento de seguimiento
+            Seguimiento.objects.create(
+                id_envio=envio,
+                id_estado=estado,
+                ubicacion=ubicacion,
+                fecha_evento=timezone.now(),
+                creado_por=creado_por
+            )
+            
+            messages.success(request, f'Estado del paquete actualizado a: {estado.nombre}')
+            
+        except Envios.DoesNotExist:
+            messages.error(request, 'Error: No se encontró ningún paquete con ese número de tracking.')
+        except ValidationError:
+            messages.error(request, 'Error: El formato del número de tracking (UUID) no es válido.')
+            
+        return redirect("actualizar_rastreo")
+
+    context = {
+        'estados': EstadosEnvio.objects.all().order_by('id_estado')
+    }
+    return render(request, "logistica/tracking.html", context)
+
+def facturacion_sar(request):
+    from .models import Envios, ConfiguracionesSar, Facturas, FacturaDetalle, Usuarios
+    from django.utils import timezone
+    from decimal import Decimal
+    from django.contrib import messages
+    from django.shortcuts import render, redirect
+    
+    context = {}
+    
+    if request.method == 'GET' and 'q' in request.GET:
+        query = request.GET.get('q')
+        try:
+            envio = Envios.objects.get(numero_tracking=query)
+            if FacturaDetalle.objects.filter(id_envio=envio, id_factura__anulada=False).exists():
+                messages.warning(request, 'Este envío ya ha sido facturado.')
+            else:
+                context['envio'] = envio
+                
+                flete = Decimal(500)
+                seguro = envio.valor_declarado_hnl * Decimal('0.05') if envio.valor_declarado_hnl else Decimal(0)
+                subtotal = flete + seguro
+                isv = subtotal * Decimal('0.15')
+                total = subtotal + isv
+                
+                context['subtotal'] = subtotal
+                context['isv'] = isv
+                context['total'] = total
+                
+        except Envios.DoesNotExist:
+            pass 
+            
+    elif request.method == 'POST':
+        id_envio = request.POST.get('id_envio')
+        subtotal = Decimal(request.POST.get('subtotal'))
+        isv = Decimal(request.POST.get('isv'))
+        total = Decimal(request.POST.get('total'))
+        
+        envio = Envios.objects.get(pk=id_envio)
+        cajero = Usuarios.objects.first()
+        
+        config_sar = ConfiguracionesSar.objects.filter(activa=True).first()
+        if not config_sar:
+            messages.error(request, 'Error crítico: No hay una configuración SAR activa.')
+            return redirect('facturacion_sar')
+            
+        numero_factura = config_sar.rango_actual
+        config_sar.rango_actual += 1
+        if config_sar.rango_actual > config_sar.rango_final:
+            config_sar.activa = False
+        config_sar.save()
+        
+        nueva_factura = Facturas.objects.create(
+            id_cliente=envio.id_cliente,
+            id_sucursal=cajero.id_sucursal,
+            id_usuario_emisor=cajero,
+            numero_factura=f"000-001-01-{numero_factura:08d}",
+            rtn_cliente=envio.id_cliente.rtn_identidad,
+            nombre_cliente=f'{envio.id_cliente.primer_nombre} {envio.id_cliente.primer_apellido}',
+            fecha_emision=timezone.now(),
+            subtotal_hnl=subtotal,
+            descuento_hnl=0,
+            base_gravable_hnl=subtotal,
+            isv_hnl=isv,
+            total_hnl=total,
+            anulada=False
+        )
+        
+        FacturaDetalle.objects.create(
+            id_factura=nueva_factura,
+            id_envio=envio,
+            descripcion=f'Envío de Paquetería - Tracking: {envio.numero_tracking}',
+            cantidad=1,
+            precio_unitario_hnl=subtotal,
+            descuento_linea_hnl=0,
+            subtotal_linea_hnl=subtotal
+        )
+        
+        messages.success(request, f'Factura {nueva_factura.numero_factura} generada exitosamente.')
+        return redirect('facturacion_sar')
+        
+    return render(request, "logistica/caja.html", context)

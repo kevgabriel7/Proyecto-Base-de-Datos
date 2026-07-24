@@ -1,0 +1,101 @@
+{% extends 'logistica/base_empleado.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-bold mb-0"><i class="bi bi-receipt text-success me-2"></i> Módulo de Caja (Facturación SAR)</h3>
+    <a href="{% url 'portal_empleado' %}" class="btn btn-outline-secondary">Volver al Dashboard</a>
+</div>
+
+<div class="row">
+    <div class="col-md-5">
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-3">Buscar Envío Pendiente</h5>
+                
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="GET" action="{% url 'facturacion_sar' %}">
+                    <div class="input-group mb-3">
+                        <input type="text" name="q" class="form-control font-monospace" placeholder="UUID del Envío" value="{{ request.GET.q }}">
+                        <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i> Buscar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-7">
+        {% if envio %}
+        <div class="card border-0 shadow-sm rounded-4 border-start border-success border-4">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+                    <h5 class="fw-bold text-success mb-0">Detalle de Cobro</h5>
+                    <span class="badge bg-secondary fs-6">{{ envio.numero_tracking|truncatechars:13 }}</span>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted fw-semibold">Cliente:</div>
+                    <div class="col-sm-8 fw-bold">{{ envio.id_cliente.primer_nombre }} {{ envio.id_cliente.primer_apellido }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted fw-semibold">Origen/Destino:</div>
+                    <div class="col-sm-8">{{ envio.id_ciudad_origen.nombre }} &rarr; {{ envio.id_ciudad_destino.nombre }}</div>
+                </div>
+                
+                <div class="table-responsive mt-4">
+                    <table class="table table-sm table-borderless">
+                        <tbody>
+                            <tr>
+                                <td>Flete (Peso Cobrable)</td>
+                                <td class="text-end text-muted">L. 500.00</td>
+                            </tr>
+                            <tr>
+                                <td>Seguro (Valor Declarado)</td>
+                                <td class="text-end text-muted">L. {{ envio.valor_declarado_hnl|floatformat:2 }}</td>
+                            </tr>
+                            <tr class="border-top border-dark">
+                                <td class="fw-bold">Subtotal</td>
+                                <td class="text-end fw-bold">L. {{ subtotal|floatformat:2 }}</td>
+                            </tr>
+                            <tr>
+                                <td>ISV (15%)</td>
+                                <td class="text-end">L. {{ isv|floatformat:2 }}</td>
+                            </tr>
+                            <tr class="fs-4">
+                                <td class="fw-bold text-success">TOTAL A PAGAR</td>
+                                <td class="text-end fw-bold text-success">L. {{ total|floatformat:2 }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <form method="POST" action="{% url 'facturacion_sar' %}" class="mt-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="id_envio" value="{{ envio.id_envio }}">
+                    <input type="hidden" name="subtotal" value="{{ subtotal }}">
+                    <input type="hidden" name="isv" value="{{ isv }}">
+                    <input type="hidden" name="total" value="{{ total }}">
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success btn-lg fw-bold"><i class="bi bi-printer me-2"></i> Facturar y Cobrar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% else %}
+            {% if request.GET.q %}
+            <div class="alert alert-warning text-center">
+                <i class="bi bi-exclamation-triangle-fill fs-1 d-block mb-2"></i>
+                No se encontró ningún envío pendiente con ese código, o ya fue facturado.
+            </div>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

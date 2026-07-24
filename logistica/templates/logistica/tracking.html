@@ -1,0 +1,60 @@
+{% extends 'logistica/base_empleado.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-bold mb-0"><i class="bi bi-upc-scan text-warning me-2"></i> Escáner de Tracking</h3>
+    <a href="{% url 'portal_empleado' %}" class="btn btn-outline-secondary">Volver al Dashboard</a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-5">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <div class="text-center mb-4">
+                    <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                        <i class="bi bi-upc-scan text-warning" style="font-size: 2.5rem;"></i>
+                    </div>
+                    <h5 class="fw-bold">Actualizar Estado de Paquete</h5>
+                    <p class="text-muted">Ingresa el número de tracking o escanéalo con el lector de código de barras.</p>
+                </div>
+
+                <form method="POST" action="{% url 'actualizar_rastreo' %}">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Número de Tracking (UUID)</label>
+                        <input type="text" name="tracking" class="form-control form-control-lg text-center font-monospace" placeholder="Ej. 123e4567-e89b-12d3-a456-426614174000" required autofocus>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Nuevo Estado del Paquete</label>
+                        <select name="id_estado" class="form-select form-select-lg" required>
+                            <option value="">Seleccione el nuevo estado...</option>
+                            {% for estado in estados %}
+                                <option value="{{ estado.id_estado }}">{{ estado.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Ubicación / Observaciones</label>
+                        <input type="text" name="ubicacion" class="form-control form-control-lg" placeholder="Ej. Aduana de Honduras, Bodega Tegucigalpa" required>
+                    </div>
+
+                    <div class="d-grid mt-5">
+                        <button type="submit" class="btn btn-warning btn-lg fw-bold text-dark"><i class="bi bi-arrow-right-circle me-2"></i> Registrar Movimiento</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
