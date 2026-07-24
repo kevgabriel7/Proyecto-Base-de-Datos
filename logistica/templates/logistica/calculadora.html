@@ -1,0 +1,110 @@
+{% extends 'logistica/base_cliente.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="mt-2">
+    <div class="tracking-header mb-4">
+        <a href="{% url 'portal_cliente' %}" class="back-btn">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <h2 class="tracking-title">Calculadora de Tarifas</h2>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
+                <div class="card-body p-4">
+                    <p class="text-muted small mb-4">Ingresa las dimensiones y el peso de tu paquete para obtener un estimado del costo de envío. Todos los costos son aproximados.</p>
+                    
+                    <form method="POST" action="{% url 'calculadora' %}">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Vía de Envío</label>
+                            <select name="via" class="form-select bg-light" required>
+                                {% for via in vias %}
+                                    <option value="{{ via.id_via }}" {% if datos_post.via == via.id_via|stringformat:"s" %}selected{% endif %}>{{ via.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label text-muted small fw-bold">Peso Real (kg)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-minecart-loaded"></i></span>
+                                <input type="number" step="0.01" name="peso" class="form-control bg-light" value="{{ datos_post.peso|default:'' }}" required placeholder="Ej. 2.5">
+                            </div>
+                        </div>
+
+                        <h6 class="text-muted small fw-bold mb-2">Dimensiones (cm)</h6>
+                        <div class="row g-2 mb-4">
+                            <div class="col-4">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-light">L</span>
+                                    <input type="number" step="0.01" name="largo" class="form-control bg-light text-center" value="{{ datos_post.largo|default:'' }}" required placeholder="0">
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-light">A</span>
+                                    <input type="number" step="0.01" name="ancho" class="form-control bg-light text-center" value="{{ datos_post.ancho|default:'' }}" required placeholder="0">
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-light">H</span>
+                                    <input type="number" step="0.01" name="alto" class="form-control bg-light text-center" value="{{ datos_post.alto|default:'' }}" required placeholder="0">
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn w-100 btn-warning rounded-pill fw-bold" style="background-color: #ffd166; border: none; color: #1e293b;">
+                            <i class="bi bi-calculator"></i> Calcular Costo Estimado
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            {% if resultado_hnl is not None %}
+            <div class="card border-0 shadow-sm h-100" style="border-radius: 12px; background-color: #f8fafc;">
+                <div class="card-body p-4 text-center d-flex flex-column justify-content-center">
+                    
+                    <div class="mb-4">
+                        <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+                        <h4 class="mt-2 fw-bold text-dark">Costo Estimado</h4>
+                    </div>
+                    
+                    <div class="display-4 fw-bold text-primary mb-2">
+                        <span style="font-size: 1.5rem; vertical-align: super;">L.</span>{{ resultado_hnl|floatformat:2|intcomma }}
+                    </div>
+                    
+                    <hr class="w-50 mx-auto my-4 text-muted">
+                    
+                    <div class="row text-start text-muted small g-2 px-md-4">
+                        <div class="col-6">
+                            <strong>Peso Real:</strong><br> {{ datos_post.peso }} kg
+                        </div>
+                        <div class="col-6">
+                            <strong>Peso/Volumen Cobrable:</strong><br> {{ peso_volumetrico|floatformat:3|default:"0" }}
+                        </div>
+                        <div class="col-12 mt-3 text-center">
+                            <em>* Este cálculo es únicamente un estimado y no incluye impuestos aduanales o cargos adicionales por embalaje especial.</em>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+            {% else %}
+            <div class="card border-0 shadow-sm h-100" style="border-radius: 12px; border: 2px dashed #cbd5e1 !important; background: transparent;">
+                <div class="card-body p-4 text-center d-flex flex-column justify-content-center align-items-center text-muted">
+                    <i class="bi bi-calculator text-muted mb-3" style="font-size: 3rem; opacity: 0.5;"></i>
+                    <p>Ingresa los datos a la izquierda para ver el resultado aquí.</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

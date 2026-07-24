@@ -1,0 +1,481 @@
+/* CSS para Clientes */
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #ffffff;
+    color: #333333;
+}
+
+.greeting {
+    font-size: 1.25rem;
+    font-weight: 700;
+    text-align: center;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+    color: #111827;
+}
+
+.main-content {
+    padding-bottom: 100px; 
+    max-width: 1200px;
+}
+
+.grid-card {
+    text-align: center;
+    padding: 1.5rem 1rem;
+    border-radius: 20px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.2s;
+    border: none;
+}
+
+.grid-card:hover {
+    transform: translateY(-5px);
+}
+
+
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: white;
+    display: flex;
+    justify-content: space-around;
+    padding: 1rem 0;
+    border-top: 1px solid #f0f0f0;
+    z-index: 1000;
+}
+
+.bottom-nav-item {
+    color: #a0aec0;
+    font-size: 1.5rem;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.bottom-nav-item:hover, .bottom-nav-item.active {
+    color: #4361ee;
+}
+
+.grid-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+.grid-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+}
+
+.bg-pastel-orange { background-color: #fff1e6; }
+.text-pastel-orange { color: #f97316; }
+
+.bg-pastel-pink { background-color: #fdf2f8; }
+.text-pastel-pink { color: #ec4899; }
+
+.bg-pastel-blue { background-color: #ecfeff; }
+.text-pastel-blue { color: #06b6d4; }
+
+.bg-pastel-purple { background-color: #f5f3ff; }
+.text-pastel-purple { color: #8b5cf6; }
+
+.bg-pastel-green { background-color: #f0fdf4; }
+.text-pastel-green { color: #22c55e; }
+
+
+.address-section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+}
+.address-section-title i {
+    color: #06b6d4;
+    margin-right: 0.5rem;
+}
+
+.address-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+}
+
+
+.paquete-card {
+    background-color: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.paquete-card .paquete-header {
+    border-bottom: 1px dashed #e5e7eb;
+    padding-bottom: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.address-type-title {
+    font-weight: 700;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    color: #374151;
+}
+.address-type-title i {
+    margin-right: 0.5rem;
+    color: #6b7280;
+}
+
+.address-text {
+    font-size: 0.8rem;
+    color: #4b5563;
+    line-height: 1.5;
+    margin: 0;
+}
+.address-text strong {
+    color: #111827;
+}
+
+.warning-text {
+    color: #d97706;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 0.5rem;
+}
+
+
+.toggle-group {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 2rem;
+    margin-bottom: 1.5rem;
+}
+.toggle-btn {
+    padding: 0.5rem 1.25rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+}
+.toggle-btn.active {
+    background-color: #2c3440;
+    color: #ffffff;
+}
+.toggle-btn.inactive {
+    background-color: #f3f4f6;
+    color: #6b7280;
+}
+.toggle-btn.inactive:hover {
+    background-color: #e5e7eb;
+}
+
+
+.filter-group {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 3rem;
+}
+.filter-pill {
+    padding: 0.35rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    text-decoration: none;
+}
+.pill-aereo {
+    background-color: #22d3ee;
+    color: #ffffff;
+}
+.pill-maritimo {
+    background-color: #e0f2fe;
+    color: #475569;
+}
+.pill-express {
+    background-color: #ecfeff;
+    color: #475569;
+}
+
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 3rem 1rem;
+}
+.empty-icon-box {
+    background-color: #475569;
+    color: #94a3b8;
+    width: 80px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.empty-icon-box::after {
+    content: '';
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    width: 15px;
+    height: 15px;
+    background-color: #64748b;
+    border-radius: 2px;
+}
+.empty-icon-box::before {
+    content: '';
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    width: 25px;
+    height: 8px;
+    background-color: #64748b;
+    border-radius: 2px;
+}
+.empty-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #e2e8f0;
+    margin-bottom: 0.5rem;
+}
+.empty-subtitle {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #38bdf8;
+    margin-bottom: 1.5rem;
+}
+.empty-text {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    max-width: 400px;
+}
+/*
+   Estilos para Pantalla: Rastreo
+*/
+.tracking-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    margin-bottom: 2rem;
+}
+.back-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #22d3ee;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-size: 1.2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.back-btn i {
+    color: #1f2937;
+}
+.tracking-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0;
+    color: #1f2937;
+}
+
+.search-container {
+    position: relative;
+    margin-bottom: 2rem;
+}
+.search-input {
+    width: 100%;
+    padding: 1rem 3rem 1rem 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    font-size: 0.95rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.search-input:focus {
+    outline: none;
+    border-color: #38bdf8;
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+}
+.search-btn {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    color: #4b5563;
+    cursor: pointer;
+}
+
+.progress-card {
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.progress-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 1.5rem;
+}
+
+
+.timeline {
+    position: relative;
+    padding-left: 2rem;
+    margin: 0;
+    list-style: none;
+}
+.timeline::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0.5rem;
+    width: 2px;
+    background-color: #e2e8f0;
+}
+.timeline-item {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    top: 0.25rem;
+    left: -1.8rem;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #38bdf8;
+    border: 2px solid #ffffff;
+    box-shadow: 0 0 0 2px #e0f2fe;
+}
+.timeline-item.completed::before {
+    background-color: #22c55e;
+    box-shadow: 0 0 0 2px #dcfce7;
+}
+.timeline-date {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+.timeline-content {
+    font-size: 0.9rem;
+    color: #334155;
+    font-weight: 500;
+}
+.timeline-desc {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin-top: 0.25rem;
+}
+
+/* 
+   Estilos para Pantalla: Facturas
+ */
+.facturas-header {
+    background-color: #3b5998;
+    color: white;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    margin-bottom: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(59, 89, 152, 0.2);
+}
+.back-btn-white {
+    color: white;
+    text-decoration: none;
+    font-size: 1.2rem;
+}
+.facturas-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+
+.envio-details-card {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.25rem;
+    font-size: 0.9rem;
+    color: #334155;
+}
+.envio-details-card .details-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 0.5rem;
+}
+.envio-details-card span, .envio-details-card strong {
+    font-size: 0.95rem;
+}
+.empty-message {
+    color: #4b5563;
+    font-size: 0.95rem;
+    margin-top: 2rem;
+}
+.factura-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f9fafb;
+}
+.factura-details h5 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+.factura-details p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+.factura-total {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #059669;
+}

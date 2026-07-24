@@ -1,0 +1,35 @@
+{% extends 'logistica/base_cliente.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="facturas-header">
+    <a href="{% url 'portal_cliente' %}" class="back-btn-white">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h2 class="facturas-title">Facturas</h2>
+</div>
+
+<div>
+    {% if facturas %}
+        <div class="mb-3">
+            <h5 class="text-muted" style="font-size: 0.9rem;">Historial de facturación</h5>
+        </div>
+        {% for factura in facturas %}
+            <div class="factura-card">
+                <div class="factura-details">
+                    <h5>Factura #{{ factura.numero_factura }}</h5>
+                    <p><i class="bi bi-calendar-event"></i> {{ factura.fecha_emision|date:"d M Y" }}</p>
+                </div>
+                <div class="factura-total">
+                    L. {{ factura.total_hnl|floatformat:2|intcomma }}
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <!-- Mensaje exacto de la imagen -->
+        <div class="empty-message">
+            No tiene facturas creadas.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

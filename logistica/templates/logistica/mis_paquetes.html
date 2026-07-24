@@ -1,0 +1,105 @@
+{% extends 'logistica/base_cliente.html' %}
+{% load humanize %}
+{% block content %}
+<div class="mt-4">
+
+    <div class="toggle-group">
+        <a href="#" class="toggle-btn active">
+            <i class="bi bi-box-seam-fill"></i> Mis paquetes
+        </a>
+        <a href="#" class="toggle-btn inactive">
+            <i class="bi bi-receipt"></i> Listo para entrega
+        </a>
+    </div>
+
+
+    <div class="filter-group">
+        <a href="#" class="filter-pill pill-aereo">
+            <i class="bi bi-airplane-fill"></i> Aéreo
+        </a>
+        <a href="#" class="filter-pill pill-maritimo">
+            <i class="bi bi-ship"></i> Marítimo
+        </a>
+        <a href="#" class="filter-pill pill-express">
+            <i class="bi bi-rocket-takeoff-fill"></i> Express
+        </a>
+    </div>
+
+
+    {% if paquetes %}
+
+        <div class="paquetes-list mt-3">
+            {% for envio in paquetes %}
+            <div class="paquete-card mb-3">
+                <div class="paquete-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>Envío #{{ envio.id_envio }}</strong>
+                        <div class="text-muted small">{{ envio.numero_tracking|truncatechars:20 }}</div>
+                    </div>
+                    <div>
+                        <span class="badge rounded-pill bg-warning text-dark">
+                            <i class="bi bi-truck"></i> {{ envio.id_estado_actual.nombre|default:"En Tránsito" }}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="paquete-body py-2">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <small class="text-muted d-block">Vía</small>
+                            {% if envio.id_via.nombre == "Aérea" %}
+                                <span class="badge bg-info text-dark"><i class="bi bi-airplane-fill"></i> Aéreo</span>
+                            {% elif envio.id_via.nombre == "Marítima" %}
+                                <span class="badge bg-secondary"><i class="bi bi-ship"></i> Marítimo</span>
+                            {% else %}
+                                <span class="badge bg-success"><i class="bi bi-rocket-takeoff-fill"></i> Express</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-6 text-end">
+                            <small class="text-muted d-block">Recepción</small>
+                            <strong>{{ envio.fecha_recepcion|date:"d M Y" }}</strong>
+                        </div>
+                        
+                        <div class="col-12 mt-2">
+                            <small class="text-muted d-block">Ruta</small>
+                            <span><i class="bi bi-person"></i> {{ envio.nombre_remitente|default:"N/D" }} &rarr; {{ envio.nombre_destinatario|default:"N/D" }}</span>
+                        </div>
+                        
+                        <div class="col-12">
+                            <small class="text-muted d-block">Dirección Destino</small>
+                            <span class="text-truncate d-block">{{ envio.direccion_destino|default:"N/D" }}</span>
+                        </div>
+                        
+                        <div class="col-6 mt-2">
+                            <small class="text-muted d-block">Flete</small>
+                            <span>L.{{ envio.costo_flete_hnl|floatformat:2|intcomma|default:"0.00" }}</span>
+                        </div>
+                        <div class="col-6 mt-2 text-end">
+                            <small class="text-muted d-block">Total Pagado</small>
+                            <strong class="text-success" style="font-size: 1.1rem;">L.{{ envio.costo_total_hnl|floatformat:2|intcomma|default:"0.00" }}</strong>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="paquete-footer border-top pt-2 mt-2 text-end">
+                    <a href="{% url 'rastreo' %}?guia={{ envio.numero_tracking }}" class="btn btn-outline-primary rounded-pill w-100">
+                        <i class="bi bi-geo-alt"></i> Rastrear Paquete
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+
+        <div class="empty-state">
+            <div class="empty-icon-box">
+
+            </div>
+            
+            <h4 class="empty-title">Aun no tienes paquetes listos</h4>
+            <div class="empty-subtitle">Esperamos felicidad en camino!</div>
+            <p class="empty-text">Si ya facturaste tus paquetes, puedes verlos en la pantalla de inicio en el apartado <strong>"Facturas"</strong>.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

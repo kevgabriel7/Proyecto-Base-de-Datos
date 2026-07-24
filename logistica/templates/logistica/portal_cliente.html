@@ -1,0 +1,156 @@
+{% extends 'logistica/base_cliente.html' %}
+
+{% block content %}
+<div class="greeting d-flex align-items-center gap-2 mb-4">
+    <span>👋 Hola, {{ nombre_completo }}</span>
+    {% if tipo_cliente %}
+        <span class="badge bg-warning text-dark" style="font-size: 0.8rem;"><i class="bi bi-star-fill"></i> Cliente {{ tipo_cliente }}</span>
+    {% endif %}
+    {% if descuento > 0 %}
+        <span class="badge bg-success" style="font-size: 0.8rem;"><i class="bi bi-percent"></i> {{ descuento }}% OFF</span>
+    {% endif %}
+</div>
+
+
+<div class="row g-3 mb-5">
+    <div class="col-6 col-md-3">
+        <a href="{% url 'mis_paquetes' %}" style="text-decoration: none;">
+            <div class="grid-card bg-pastel-blue h-100">
+                <i class="bi bi-box-seam-fill grid-icon text-pastel-blue"></i>
+                <p class="grid-title">Mis paquetes</p>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{% url 'rastreo' %}" style="text-decoration: none;">
+            <div class="grid-card bg-pastel-purple h-100">
+                <i class="bi bi-geo-alt-fill grid-icon text-pastel-purple"></i>
+                <p class="grid-title">Rastreo</p>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{% url 'calculadora' %}" style="text-decoration: none;">
+            <div class="grid-card bg-pastel-orange h-100">
+                <i class="bi bi-calculator-fill grid-icon text-pastel-orange"></i>
+                <p class="grid-title">Calculadora</p>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{% url 'facturas' %}" style="text-decoration: none;">
+            <div class="grid-card bg-pastel-green h-100">
+                <i class="bi bi-receipt grid-icon text-pastel-green"></i>
+                <p class="grid-title">Facturas</p>
+            </div>
+        </a>
+    </div>
+</div>
+
+
+<div class="row g-4">
+
+    <div class="col-lg-7">
+        <h5 class="address-section-title mb-3" style="font-weight: 600;">
+            <i class="bi bi-globe-americas"></i> Tus Direcciones de Casillero en Miami
+        </h5>
+        
+        <div class="accordion shadow-sm" id="accordionDirecciones" style="border-radius: 12px; overflow: hidden; border: 1px solid rgba(0,0,0,0.05);">
+
+            <div class="accordion-item border-0 border-bottom">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed bg-white fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExpress">
+                        <i class="bi bi-rocket-takeoff-fill text-warning me-2"></i> Dirección Express (Requiere Pre-alerta)
+                    </button>
+                </h2>
+                <div id="collapseExpress" class="accordion-collapse collapse" data-bs-parent="#accordionDirecciones">
+                    <div class="accordion-body bg-light">
+                        <p class="address-text mb-0">
+                            <strong>Nombre:</strong> EXPRESS EMPRESA {{ nombre_completo }}<br>
+                            <strong>Dirección:</strong> {{ sucursal_miami.direccion|default:"8265 NW 74th Ave, Miami FL" }}<br>
+                            <strong>Línea 2:</strong> EXPRESS EMPRESA<br>
+                            <strong>Ciudad:</strong> {{ sucursal_miami.id_ciudad.nombre|default:"Miami"|upper }}, Florida 33166<br>
+                            <strong>Tel:</strong> {{ sucursal_miami.telefono|default:"+1 305 555 0100" }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <!-- Aéreo -->
+            <div class="accordion-item border-0 border-bottom">
+                <h2 class="accordion-header">
+                    <button class="accordion-button bg-white fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAereo" aria-expanded="true">
+                        <i class="bi bi-airplane-fill text-primary me-2"></i> Dirección Aéreo (Estándar)
+                    </button>
+                </h2>
+                <div id="collapseAereo" class="accordion-collapse collapse show" data-bs-parent="#accordionDirecciones">
+                    <div class="accordion-body bg-light">
+                        <p class="address-text mb-0">
+                            <strong>Nombre:</strong> AEREO EMPRESA {{ nombre_completo }}<br>
+                            <strong>Dirección:</strong> {{ sucursal_miami.direccion|default:"8265 NW 74th Ave, Miami FL" }}<br>
+                            <strong>Línea 2:</strong> AEREO EMPRESA<br>
+                            <strong>Ciudad:</strong> {{ sucursal_miami.id_ciudad.nombre|default:"Miami"|upper }}, Florida 33166<br>
+                            <strong>Tel:</strong> {{ sucursal_miami.telefono|default:"+1 305 555 0100" }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item border-0">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed bg-white fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMaritimo">
+                        <i class="bi bi-ship-fill text-success me-2"></i> Dirección Marítimo (Económico)
+                    </button>
+                </h2>
+                <div id="collapseMaritimo" class="accordion-collapse collapse" data-bs-parent="#accordionDirecciones">
+                    <div class="accordion-body bg-light">
+                        <p class="address-text mb-0">
+                            <strong>Nombre:</strong> MARITIMO EMPRESA {{ nombre_completo }}<br>
+                            <strong>Dirección:</strong> {{ sucursal_miami.direccion|default:"8265 NW 74th Ave, Miami FL" }}<br>
+                            <strong>Línea 2:</strong> MARITIMO EMPRESA<br>
+                            <strong>Ciudad:</strong> {{ sucursal_miami.id_ciudad.nombre|default:"Miami"|upper }}, Florida 33166<br>
+                            <strong>Tel:</strong> {{ sucursal_miami.telefono|default:"+1 305 555 0100" }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+
+    <div class="col-lg-5">
+        <h5 class="address-section-title mb-3" style="font-weight: 600;">
+            <i class="bi bi-person-vcard"></i> Mi Perfil y Entrega
+        </h5>
+        
+        <div class="card border-0 shadow-sm" style="border-radius: 12px; background-color: #f8fafc;">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-primary text-white rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 48px; height: 48px; font-size: 1.2rem;">
+                        <i class="bi bi-person-fill"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-0 fw-bold">{{ nombre_completo }}</h6>
+                        <small class="text-muted">{{ email_local }}</small>
+                    </div>
+                </div>
+                
+                <hr class="text-muted">
+                
+                <p class="address-text mt-3">
+                    <i class="bi bi-geo-alt text-muted me-2"></i> <strong>Dirección:</strong> {{ direccion_local }}<br>
+                    <i class="bi bi-building text-muted me-2"></i> <strong>Ciudad:</strong> {{ ciudad_local }}<br>
+                    <i class="bi bi-telephone text-muted me-2"></i> <strong>Tel:</strong> {{ telefono_local }}
+                </p>
+                
+                <div class="d-grid mt-4">
+                    <a href="{% url 'mis_datos' %}" class="btn btn-outline-primary rounded-pill fw-bold">
+                        <i class="bi bi-pencil-square"></i> Editar mis datos
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

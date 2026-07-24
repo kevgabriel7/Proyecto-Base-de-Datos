@@ -1,0 +1,97 @@
+{% extends 'logistica/base_cliente.html' %}
+
+{% block content %}
+<div class="mt-2">
+    <div class="tracking-header mb-4">
+        <a href="{% url 'portal_cliente' %}" class="back-btn">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <h2 class="tracking-title">Editar mis datos</h2>
+    </div>
+
+    {% if mensaje_exito %}
+    <div class="alert alert-success d-flex align-items-center" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <div>Tus datos han sido actualizados exitosamente.</div>
+    </div>
+    {% endif %}
+
+    <div class="card border-0 shadow-sm" style="border-radius: 12px;">
+        <div class="card-body p-4">
+            <form method="POST" action="{% url 'mis_datos' %}">
+                {% csrf_token %}
+                
+                <h5 class="mb-3 text-muted" style="font-size: 0.95rem; font-weight: 600;"><i class="bi bi-person"></i> Información Personal</h5>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small fw-bold">Primer Nombre</label>
+                        <input type="text" name="primer_nombre" class="form-control bg-light" value="{{ cliente.primer_nombre|default:'' }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small fw-bold">Segundo Nombre</label>
+                        <input type="text" name="segundo_nombre" class="form-control bg-light" value="{{ cliente.segundo_nombre|default:'' }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small fw-bold">Primer Apellido</label>
+                        <input type="text" name="primer_apellido" class="form-control bg-light" value="{{ cliente.primer_apellido|default:'' }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small fw-bold">Segundo Apellido</label>
+                        <input type="text" name="segundo_apellido" class="form-control bg-light" value="{{ cliente.segundo_apellido|default:'' }}">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label text-muted small fw-bold">Documento de Identidad (RTN/DNI)</label>
+                        <input type="text" name="rtn" class="form-control bg-light" value="{{ cliente.rtn|default:'' }}">
+                    </div>
+                </div>
+
+                <h5 class="mb-3 text-muted" style="font-size: 0.95rem; font-weight: 600;"><i class="bi bi-geo-alt"></i> Información de Contacto</h5>
+                <div class="row g-3 mb-4">
+                    <div class="col-12">
+                        <label class="form-label text-muted small fw-bold">Dirección Completa</label>
+                        <input type="text" name="direccion" class="form-control bg-light" value="{{ cliente.direccion|default:'' }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small fw-bold">Ciudad</label>
+                        <select name="ciudad" class="form-select bg-light" required>
+                            <option value="">Selecciona una ciudad...</option>
+                            {% for ciudad in ciudades %}
+                                <option value="{{ ciudad.id_ciudad }}" {% if cliente.id_ciudad.id_ciudad == ciudad.id_ciudad %}selected{% endif %}>
+                                    {{ ciudad.nombre }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small fw-bold">Teléfono</label>
+                        <input type="text" name="telefono" class="form-control bg-light" value="{{ cliente.telefono|default:'' }}" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label text-muted small fw-bold">Correo Electrónico</label>
+                        <input type="email" name="email" class="form-control bg-light" value="{{ cliente.email|default:'' }}" required>
+                    </div>
+                </div>
+
+                <h5 class="mb-3 text-muted" style="font-size: 0.95rem; font-weight: 600;"><i class="bi bi-shield-lock"></i> Seguridad</h5>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small fw-bold">Contraseña</label>
+                        <input type="password" name="password" class="form-control bg-light" placeholder="********">
+                        <div class="form-text" style="font-size: 0.75rem;">Déjalo en blanco si no deseas cambiarla.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small fw-bold">Re-contraseña</label>
+                        <input type="password" name="re_password" class="form-control bg-light" placeholder="********">
+                    </div>
+                </div>
+
+                <div class="d-grid mt-5">
+                    <button type="submit" class="btn btn-warning btn-lg rounded-pill fw-bold" style="background-color: #ffd166; border: none; color: #1e293b;">
+                        Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

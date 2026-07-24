@@ -1,0 +1,91 @@
+{% extends 'logistica/base_cliente.html' %}
+{% load humanize %}
+{% block content %}
+<div class="mt-2">
+
+    <div class="tracking-header">
+        <a href="{% url 'portal_cliente' %}" class="back-btn">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <h2 class="tracking-title">Tracking</h2>
+    </div>
+
+    <form method="GET" action="{% url 'rastreo' %}">
+        <div class="search-container">
+            <input type="text" name="guia" class="search-input" placeholder="Escribe tu numero de guia" value="{{ numero_guia|default:'' }}" required>
+            <button type="submit" class="search-btn">
+                <i class="bi bi-search"></i>
+            </button>
+        </div>
+    </form>
+
+    <div class="progress-card">
+        <h3 class="progress-title">Progreso</h3>
+        
+        {% if error %}
+            <div class="alert alert-danger" role="alert">
+                <i class="bi bi-exclamation-triangle-fill"></i> {{ error }}
+            </div>
+        {% elif envio %}
+            <div class="mb-4">
+                <strong>Envío #{{ envio.id_envio }}</strong><br>
+                <small class="text-muted">{{ envio.numero_tracking }}</small>
+            </div>
+            
+
+            <div class="envio-details-card mb-4">
+                <h6 class="details-title"><i class="bi bi-box-seam"></i> Información del Paquete</h6>
+                <div class="row g-3">
+                    <div class="col-6">
+                        <small class="text-muted d-block">Remitente</small>
+                        <strong>{{ envio.nombre_remitente|default:"N/D" }}</strong>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted d-block">Destinatario</small>
+                        <strong>{{ envio.nombre_destinatario|default:"N/D" }}</strong>
+                    </div>
+                    <div class="col-12">
+                        <small class="text-muted d-block">Dirección de Destino</small>
+                        <span>{{ envio.direccion_destino|default:"N/D" }}</span>
+                    </div>
+                    <div class="col-4">
+                        <small class="text-muted d-block">V. Declarado</small>
+                        <span>${{ envio.valor_declarado_hnl|floatformat:2|intcomma|default:"0.00" }}</span>
+                    </div>
+                    <div class="col-4">
+                        <small class="text-muted d-block">Flete</small>
+                        <span>L.{{ envio.costo_flete_hnl|floatformat:2|intcomma|default:"0.00" }}</span>
+                    </div>
+                    <div class="col-4">
+                        <small class="text-muted d-block">Total</small>
+                        <strong class="text-success">L.{{ envio.costo_total_hnl|floatformat:2|intcomma|default:"0.00" }}</strong>
+                    </div>
+                </div>
+            </div>
+            
+            {% if eventos %}
+                <ul class="timeline">
+                    {% for evento in eventos %}
+                    <li class="timeline-item {% if forloop.first %}completed{% endif %}">
+                        <div class="timeline-date">{{ evento.fecha_evento|date:"d M Y, h:i A" }}</div>
+                        <div class="timeline-content">{{ evento.id_estado.nombre }}</div>
+                        {% if evento.ubicacion_descripcion or evento.observaciones %}
+                            <div class="timeline-desc">
+                                {% if evento.ubicacion_descripcion %}<i class="bi bi-geo-alt"></i> {{ evento.ubicacion_descripcion }}<br>{% endif %}
+                                {% if evento.observaciones %}{{ evento.observaciones }}{% endif %}
+                            </div>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-muted">Aún no hay eventos de seguimiento para este envío.</p>
+            {% endif %}
+        {% else %}
+            {% if not numero_guia %}
+                <p class="text-muted text-center py-4">Ingresa un número de guía arriba para ver su progreso.</p>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
