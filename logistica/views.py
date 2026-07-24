@@ -374,9 +374,9 @@ def actualizar_rastreo(request):
             Seguimiento.objects.create(
                 id_envio=envio,
                 id_estado=estado,
-                ubicacion=ubicacion,
+                ubicacion_descripcion=ubicacion,
                 fecha_evento=timezone.now(),
-                creado_por=creado_por
+                id_usuario=creado_por
             )
             
             messages.success(request, f'Estado del paquete actualizado a: {estado.nombre}')
@@ -433,23 +433,28 @@ def facturacion_sar(request):
         envio = Envios.objects.get(pk=id_envio)
         cajero = Usuarios.objects.first()
         
-        config_sar = ConfiguracionesSar.objects.filter(activa=True).first()
+        config_sar = ConfiguracionesSar.objects.filter(activo=True).first()
         if not config_sar:
             messages.error(request, 'Error crítico: No hay una configuración SAR activa.')
             return redirect('facturacion_sar')
             
-        numero_factura = config_sar.rango_actual
-        config_sar.rango_actual += 1
-        if config_sar.rango_actual > config_sar.rango_final:
-            config_sar.activa = False
+        numero_secuencia = config_sar.secuencia_actual
+        config_sar.secuencia_actual += 1
+        
+        rango_final_int = int(config_sar.rango_final.split('-')[-1])
+        if config_sar.secuencia_actual > rango_final_int:
+            config_sar.activo = False
         config_sar.save()
+        
+        prefix = '-'.join(config_sar.rango_inicial.split('-')[:-1])
+        factura_formateada = f"{prefix}-{numero_secuencia:08d}"
         
         nueva_factura = Facturas.objects.create(
             id_cliente=envio.id_cliente,
             id_sucursal=cajero.id_sucursal,
             id_usuario_emisor=cajero,
-            numero_factura=f"000-001-01-{numero_factura:08d}",
-            rtn_cliente=envio.id_cliente.rtn_identidad,
+            numero_factura=factura_formateada,
+            rtn_cliente=envio.id_cliente.rtn,
             nombre_cliente=f'{envio.id_cliente.primer_nombre} {envio.id_cliente.primer_apellido}',
             fecha_emision=timezone.now(),
             subtotal_hnl=subtotal,

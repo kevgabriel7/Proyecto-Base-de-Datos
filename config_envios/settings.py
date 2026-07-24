@@ -54,9 +54,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'bd_envios',
-        'USER': 'postgres',
-        'PASSWORD': 'kadosh',
-        'HOST': 'localhost',
+        'USER': 'admin',
+        'PASSWORD': 'clashero123021.',
+        'HOST': '127.0.0.1',
         'PORT': '5432',
     }
 }
@@ -78,7 +78,6 @@ USE_I18N = True
 
 USE_TZ = True
 
-# Configuracion de separadores numericos (Miles: coma, Decimales: punto)
 DECIMAL_SEPARATOR = '.'
 THOUSAND_SEPARATOR = ','
 NUMBER_GROUPING = 3
