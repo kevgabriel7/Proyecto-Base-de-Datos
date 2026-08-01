@@ -1,0 +1,43 @@
+{% extends 'logistica/base_cliente.html' %}
+
+{% block content %}
+<div class="container mt-5">
+  <h2>Crear cuenta de cliente</h2>
+
+  <form method="POST">
+    {% csrf_token %}
+
+    <div class="mb-3">
+      <label class="form-label">Nombre</label>
+      <input class="form-control" type="text" name="primer_nombre" required>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Apellido</label>
+      <input class="form-control" type="text" name="primer_apellido" required>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Correo</label>
+      <input class="form-control" type="email" name="email" required>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Teléfono</label>
+      <input class="form-control" type="text" name="telefono">
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Dirección</label>
+      <textarea class="form-control" name="direccion"></textarea>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Contraseña</label>
+      <input class="form-control" type="password" name="password" required>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Crear cuenta</button>
+  </form>
+</div>
+{% endblock %}
