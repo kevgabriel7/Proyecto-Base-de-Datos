@@ -1,5 +1,5 @@
 """
-] servicios para el cálculo de tarifas de envío, peso volumétrico
+ servicios para el cálculo de tarifas de envío, peso volumétrico
 y generación automática de facturación SAR.
 """
 # @author hnramireza@unah.hn

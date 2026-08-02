@@ -124,34 +124,63 @@ def mis_paquetes(request):
     envios = Envios.objects.filter(id_cliente=cliente)
     return render(request, 'logistica/mis_paquetes.html', {'paquetes': envios})
 
+
 def programar_envio(request):
     cliente = get_cliente_actual(request)
     if not cliente:
         return redirect("login")
+
     if request.method == "POST":
         id_via = request.POST.get("id_via")
         id_tipo_servicio = request.POST.get("id_tipo_servicio")
         descripcion = request.POST.get("descripcion")
-        largo = Decimal(request.POST.get("largo"))
-        ancho = Decimal(request.POST.get("ancho"))
-        alto = Decimal(request.POST.get("alto"))
-        peso = Decimal(request.POST.get("peso_real"))
-        valor_declarado = Decimal(request.POST.get("valor_declarado", "0"))
+
+
+        largo = Decimal(request.POST.get("largo", "0"))
+        ancho = Decimal(request.POST.get("ancho", "0"))
+        alto = Decimal(request.POST.get("alto", "0"))
+        peso = Decimal(request.POST.get("peso_real", "0"))
+
+
+        valor_declarado_raw = request.POST.get("valor_declarado")
+        valor_declarado = Decimal(valor_declarado_raw) if valor_declarado_raw else Decimal("0")
+
         via = ViasEnvio.objects.get(pk=id_via)
         servicio = TiposServicio.objects.get(pk=id_tipo_servicio)
+
         estado = EstadosEnvio.objects.filter(nombre__icontains="pendiente").first() or EstadosEnvio.objects.first()
         sucursal_miami = Sucursales.objects.filter(nombre__icontains="Miami").first()
         sucursal_destino = Sucursales.objects.exclude(nombre__icontains="Miami").first()
+
         if not sucursal_miami or not sucursal_destino:
             messages.error(request, "No existen sucursales configuradas.")
             return redirect("programar_envio")
+
         ruta = Rutas.objects.first()
         tarifa = Tarifas.objects.filter(id_via=via, id_tipo_servicio=servicio, activa=True).first()
+
         if not tarifa:
             messages.error(request, "No existe tarifa configurada.")
             return redirect("programar_envio")
-        costo = tarifa.precio_base_hnl
+
+
+        resultado_calculo = calcular_tarifa_envio(
+            peso_real=peso,
+            largo_cm=largo,
+            ancho_cm=ancho,
+            alto_cm=alto,
+            id_via=int(via.pk)
+        )
+
+
+        costo_flete = resultado_calculo["costo"]
+
+
+        costo_total = costo_flete
+
         ciudad_destino = cliente.id_ciudad if cliente.id_ciudad else sucursal_destino.id_ciudad
+
+
         envio = Envios.objects.create(
             numero_tracking=uuid.uuid4(),
             id_cliente=cliente,
@@ -168,13 +197,17 @@ def programar_envio(request):
             nombre_destinatario=f"{cliente.primer_nombre or ''} {cliente.primer_apellido or ''}".strip(),
             telefono_destinatario=cliente.telefono or "00000000",
             direccion_destino=cliente.direccion or "Pendiente de completar",
+
+
             valor_declarado_hnl=valor_declarado,
-            costo_flete_hnl=costo,
+            costo_flete_hnl=costo_flete,
             descuento_hnl=Decimal("0"),
-            costo_total_hnl=costo,
+            costo_total_hnl=costo_total,
+
             fecha_recepcion=timezone.now(),
             creado_por=Usuarios.objects.first()
         )
+
         Paquetes.objects.create(
             id_envio=envio,
             numero_paquete=1,
@@ -184,15 +217,17 @@ def programar_envio(request):
             alto_cm=alto,
             peso_real_kg=peso
         )
+
         generar_factura_automatica(envio)
+
         messages.success(request, f"Solicitud creada correctamente. Tracking: {envio.numero_tracking}")
         return redirect("portal_cliente")
+
     context = {
         "vias": ViasEnvio.objects.all(),
         "servicios": TiposServicio.objects.all(),
     }
     return render(request, "logistica/programar_envio.html", context)
-
 def rastreo(request):
     numero_guia = request.GET.get('guia', '').strip()
     envio = None
