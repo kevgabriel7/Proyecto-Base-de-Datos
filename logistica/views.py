@@ -15,22 +15,24 @@ def get_cliente_actual(request):
     except Clientes.DoesNotExist:
         return None
 
-
+# dinde mandar al usuario cuado entra ala pagina principal
 def home_redirect(request):
-    if request.session.get('id_cliente'):
-        return redirect('portal_cliente')
-    return redirect('login')
+    if request.session.get('id_cliente'):    #buscamos si el cliente existe
+        return redirect('portal_cliente')    #si existe lo envia ala pagina del portal del cliente
+    return redirect('login')                 # si no lo envia al login
 
-
+#funcion para inicio de sesion
 def login_view(request):
     error = None
 
+    # comprobar si el usuario toco el boton de iniciar sesion
+
     if request.method == 'POST':
-        identificador = request.POST.get('email', '').strip()
-        password = request.POST.get('password', '')
+        identificador = request.POST.get('email', '').strip() # obtiene lo que el usuario escribio en el correo y elimina espacios
+        password = request.POST.get('password', '')            # aqui vamos a obtener el password que ingreso el cliente
 
         # 1) Intentar como staff (auth.User de Django -> panel admin)
-        user = authenticate(request, username=identificador, password=password)
+        user = authenticate(request, username=identificador, password=password)  
         if user is None:
             try:
                 u = User.objects.get(email=identificador)
@@ -40,7 +42,7 @@ def login_view(request):
 
         if user is not None and user.is_staff:
             django_login(request, user)
-            return redirect('/admin/')
+            return redirect('/admin-portal/')
 
         # 2) Intentar como cliente
         try:
