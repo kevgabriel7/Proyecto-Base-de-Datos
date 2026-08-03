@@ -1,70 +1,142 @@
 {% extends 'logistica/base_cliente.html' %}
 
 {% block content %}
-<div class="container">
-  <h4 class="mb-4">
-    <i class="bi bi-send-fill"></i> Programar nuevo envío
-  </h4>
-
-  <div class="card shadow-sm">
-    <div class="card-body">
-      <form method="POST">
-        {% csrf_token %}
-
-        <div class="mb-3">
-          <label class="form-label">Vía de envío</label>
-          <select name="id_via" class="form-select" required>
-            <option value="">Seleccione una vía</option>
-            {% for via in vias %}
-            <option value="{{ via.id_via }}">{{ via.nombre }}</option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label">Tipo de servicio</label>
-          <select name="id_tipo_servicio" class="form-select" required>
-            <option value="">Seleccione servicio</option>
-            {% for servicio in servicios %}
-            <option value="{{ servicio.id_tipo_servicio }}">{{ servicio.nombre }}</option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label">Descripción del paquete</label>
-          <textarea name="descripcion" class="form-control" required></textarea>
-        </div>
-
-        <div class="row g-3 mb-3">
-          <div class="col-md-3">
-            <label class="form-label">Largo cm</label>
-            <input type="number" step="0.01" name="largo" class="form-control" required>
-          </div>
-          <div class="col-md-3">
-            <label class="form-label">Ancho cm</label>
-            <input type="number" step="0.01" name="ancho" class="form-control" required>
-          </div>
-          <div class="col-md-3">
-            <label class="form-label">Alto cm</label>
-            <input type="number" step="0.01" name="alto" class="form-control" required>
-          </div>
-          <div class="col-md-3">
-            <label class="form-label">Peso kg</label>
-            <input type="number" step="0.001" name="peso_real" class="form-control" required>
-          </div>
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label">Valor declarado HNL</label>
-          <input type="number" step="0.01" name="valor_declarado" class="form-control">
-        </div>
-
-        <button type="submit" class="btn btn-primary w-100">
-          <i class="bi bi-check-circle"></i> Solicitar envío
-        </button>
-      </form>
+<div class="container mb-5">
+  <div class="d-flex align-items-center mb-4">
+    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3 shadow-sm" style="width: 48px; height: 48px;">
+      <i class="bi bi-box-seam fs-4"></i>
+    </div>
+    <div>
+      <h3 class="fw-bold mb-0 text-dark">Pre-Alerta de Paquete</h3>
+      <p class="text-muted mb-0">Infórmanos sobre tus compras para recibirlas en Miami</p>
     </div>
   </div>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-info-circle-fill me-2"></i> {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="POST">
+    {% csrf_token %}
+    <div class="row g-4">
+      
+      <!-- Columna 1: Logística -->
+      <div class="col-lg-5">
+        <div class="card shadow-sm border-0 h-100" style="border-radius: 12px;">
+          <div class="card-header bg-light border-0 pt-4 pb-0">
+            <h5 class="fw-bold text-primary"><i class="bi bi-truck me-2"></i> Detalles de Logística</h5>
+          </div>
+          <div class="card-body">
+            
+            <div class="mb-4">
+              <label class="form-label fw-semibold text-dark">Vía de Envío <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text bg-white"><i class="bi bi-airplane text-muted"></i></span>
+                <select name="id_via" class="form-select" required>
+                  <option value="" selected disabled>Seleccione vía (Aérea/Marítima)</option>
+                  {% for via in vias %}
+                  <option value="{{ via.id_via }}">{{ via.nombre }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <small class="text-muted d-block mt-1" style="font-size: 0.8rem;">La vía marítima es ideal para paquetes pesados.</small>
+            </div>
+
+            <div class="mb-4">
+              <label class="form-label fw-semibold text-dark">Tipo de Servicio <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text bg-white"><i class="bi bi-speedometer2 text-muted"></i></span>
+                <select name="id_tipo_servicio" class="form-select" required>
+                  <option value="" selected disabled>Seleccione velocidad...</option>
+                  {% for servicio in servicios %}
+                  <option value="{{ servicio.id_tipo_servicio }}">{{ servicio.nombre }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold text-dark">Descripción de la Compra <span class="text-danger">*</span></label>
+              <textarea name="descripcion" class="form-control" rows="3" placeholder="Ej. Zapatos deportivos Nike, Talla 10, color rojo" required></textarea>
+              <small class="text-info d-block mt-1" style="font-size: 0.8rem;">Sé detallado para facilitar la aduana.</small>
+            </div>
+            
+          </div>
+        </div>
+      </div>
+
+      <!-- Columna 2: Dimensiones y Costos -->
+      <div class="col-lg-7">
+        <div class="card shadow-sm border-0 h-100" style="border-radius: 12px;">
+          <div class="card-header bg-light border-0 pt-4 pb-0">
+            <h5 class="fw-bold text-primary"><i class="bi bi-rulers me-2"></i> Dimensiones y Valor Estimado</h5>
+          </div>
+          <div class="card-body">
+            
+            <div class="alert alert-secondary border-0 bg-light d-flex align-items-center p-3 mb-4 rounded-3">
+              <i class="bi bi-info-circle-fill text-primary fs-3 me-3"></i>
+              <div>
+                <strong class="d-block text-dark">Nota Importante:</strong>
+                <span class="text-muted" style="font-size: 0.85rem;">Si no conoces las dimensiones exactas, coloca un aproximado. El peso y costo oficial será determinado en nuestra bodega de Miami.</span>
+              </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+              <div class="col-sm-6 col-md-3">
+                <label class="form-label fw-semibold text-dark">Largo (cm) <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <input type="number" step="0.01" min="1" name="largo" class="form-control text-center" value="10" required>
+                  <span class="input-group-text bg-light">cm</span>
+                </div>
+              </div>
+              <div class="col-sm-6 col-md-3">
+                <label class="form-label fw-semibold text-dark">Ancho (cm) <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <input type="number" step="0.01" min="1" name="ancho" class="form-control text-center" value="10" required>
+                  <span class="input-group-text bg-light">cm</span>
+                </div>
+              </div>
+              <div class="col-sm-6 col-md-3">
+                <label class="form-label fw-semibold text-dark">Alto (cm) <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <input type="number" step="0.01" min="1" name="alto" class="form-control text-center" value="10" required>
+                  <span class="input-group-text bg-light">cm</span>
+                </div>
+              </div>
+              <div class="col-sm-6 col-md-3">
+                <label class="form-label fw-semibold text-dark">Peso (Kg) <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <input type="number" step="0.01" min="0.1" name="peso_real" class="form-control text-center bg-white" placeholder="Ej. 2.5" required>
+                  <span class="input-group-text bg-warning text-dark fw-bold">Kg</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <label class="form-label fw-semibold text-dark">Valor Declarado de la Compra (HNL)</label>
+              <div class="input-group">
+                <span class="input-group-text bg-success text-white fw-bold">L.</span>
+                <input type="number" step="0.01" min="0" name="valor_declarado" class="form-control fs-5" placeholder="0.00">
+              </div>
+              <small class="text-muted d-block mt-1" style="font-size: 0.8rem;">Opcional. Valor total de tu factura de Amazon/Ebay para temas de seguro.</small>
+            </div>
+
+            <hr class="my-4 text-muted">
+            
+            <button type="submit" class="btn btn-primary w-100 py-3 fw-bold rounded-pill shadow-sm" style="font-size: 1.1rem;">
+              <i class="bi bi-cloud-arrow-up-fill me-2"></i> Crear Pre-Alerta de Paquete
+            </button>
+            
+          </div>
+        </div>
+      </div>
+      
+    </div>
+  </form>
 </div>
 {% endblock %}

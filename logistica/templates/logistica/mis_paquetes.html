@@ -3,27 +3,7 @@
 {% block content %}
 <div class="mt-4">
 
-    <div class="toggle-group">
-        <a href="#" class="toggle-btn active">
-            <i class="bi bi-box-seam-fill"></i> Mis paquetes
-        </a>
-        <a href="#" class="toggle-btn inactive">
-            <i class="bi bi-receipt"></i> Listo para entrega
-        </a>
-    </div>
 
-
-    <div class="filter-group">
-        <a href="#" class="filter-pill pill-aereo">
-            <i class="bi bi-airplane-fill"></i> Aéreo
-        </a>
-        <a href="#" class="filter-pill pill-maritimo">
-            <i class="bi bi-ship"></i> Marítimo
-        </a>
-        <a href="#" class="filter-pill pill-express">
-            <i class="bi bi-rocket-takeoff-fill"></i> Express
-        </a>
-    </div>
 
 
     {% if paquetes %}
@@ -82,6 +62,26 @@
                 </div>
                 
                 <div class="paquete-footer border-top pt-2 mt-2 text-end">
+                    {% if envio.pagado_o_en_proceso %}
+                        <div class="mb-2">
+                            <button class="btn btn-sm btn-info text-white w-100 fw-bold shadow-sm" disabled>
+                                <i class="bi bi-shield-check"></i> {{ envio.mensaje_pago }}
+                            </button>
+                        </div>
+                    {% elif envio.id_estado_actual.id_estado == 1 and not envio.costo_total_hnl %}
+                        <div class="mb-2">
+                            <button class="btn btn-sm btn-secondary w-100" disabled>
+                                <i class="bi bi-hourglass-split"></i> Pendiente de Revisión en Báscula
+                            </button>
+                            <small class="d-block text-muted mt-1 text-center" style="font-size: 0.75rem;">Podrás pagar cuando el paquete sea pesado.</small>
+                        </div>
+                    {% elif envio.id_estado_actual.id_estado == 1 and envio.costo_total_hnl %}
+                        <div class="mb-2">
+                            <a href="{% url 'checkout_envio' envio.numero_tracking %}" class="btn btn-sm btn-success w-100">
+                                <i class="bi bi-credit-card"></i> Pagar Envío a Honduras
+                            </a>
+                        </div>
+                    {% endif %}
                     <a href="{% url 'rastreo' %}?guia={{ envio.numero_tracking }}" class="btn btn-outline-primary rounded-pill w-100">
                         <i class="bi bi-geo-alt"></i> Rastrear Paquete
                     </a>

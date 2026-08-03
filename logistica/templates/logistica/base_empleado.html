@@ -50,6 +50,12 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'facturacion_sar' %}"><i class="bi bi-cash-coin"></i> Caja</a>
                     </li>
+                                        <li class="nav-item">
+                        <a class="nav-link" href="{% url 'auditar_paquetes' %}"><i class="bi bi-ui-checks"></i> Auditar Pesos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'verificar_pagos' %}"><i class="bi bi-shield-check"></i> Verificar Pagos</a>
+                    </li>
                     <li class="nav-item">
                         <a class="nav-link text-danger" href="{% url 'portal_cliente' %}"><i class="bi bi-door-open-fill"></i> Salir</a>
                     </li>
@@ -59,6 +65,15 @@
     </nav>
 
     <div class="container py-4 pb-5" style="max-width: 1000px;">
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
         {% block content %}
         {% endblock %}
     </div>

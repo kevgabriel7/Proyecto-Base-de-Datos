@@ -14,18 +14,44 @@ def calcular_peso_volumetrico(largo_cm, ancho_cm, alto_cm):
     volumen_cm3 = largo_cm * ancho_cm * alto_cm
     return volumen_cm3 / Decimal('5000')
 
-def calcular_tarifa_envio(peso_real, largo_cm, ancho_cm, alto_cm, id_via):
+def calcular_tarifa_envio(peso_real, largo_cm, ancho_cm, alto_cm, envio):
+    from .models import Tarifas
     peso_volumetrico = calcular_peso_volumetrico(largo_cm, ancho_cm, alto_cm)
     peso_cobrable = max(peso_real, peso_volumetrico)
-    if id_via == 1:
-        costo = peso_cobrable * Decimal('125')
-    elif id_via == 2:
-        volumen_m3 = (largo_cm * ancho_cm * alto_cm) / Decimal('1000000')
-        costo = volumen_m3 * Decimal('5000')
-        if costo < Decimal('500'):
-            costo = Decimal('500')
+    
+    # 1. Intentar buscar tarifa exacta en la BD
+    tarifa_db = Tarifas.objects.filter(
+        id_via=envio.id_via,
+        id_tipo_servicio=envio.id_tipo_servicio,
+        id_ciudad_origen=envio.id_ciudad_origen,
+        id_ciudad_destino=envio.id_ciudad_destino,
+        activa=True
+    ).filter(
+        peso_min_kg__lte=peso_cobrable,
+        peso_max_kg__gte=peso_cobrable
+    ).first()
+
+    # 2. Si no hay exacta, buscar una genérica para esa Vía (Salvavidas MVP)
+    if not tarifa_db:
+        tarifa_db = Tarifas.objects.filter(id_via=envio.id_via, activa=True).first()
+
+    # 3. Calcular usando los valores reales de la Base de Datos
+    if tarifa_db:
+        if envio.id_via.pk == 1: # Aereo (cobra por peso)
+            costo = tarifa_db.precio_base_hnl + (peso_cobrable * tarifa_db.precio_por_kg_hnl)
+        else: # Maritimo (cobra por volumen m3)
+            volumen_m3 = (largo_cm * ancho_cm * alto_cm) / Decimal('1000000')
+            costo = tarifa_db.precio_base_hnl + (volumen_m3 * tarifa_db.precio_por_m3_hnl)
+            if costo < Decimal('500'): # Costo mínimo
+                costo = Decimal('500')
     else:
-        costo = Decimal('0')
+        # Fallback ultra extremo si la tabla esta completamente vacia
+        if envio.id_via.pk == 1:
+            costo = peso_cobrable * Decimal('125')
+        else:
+            volumen_m3 = (largo_cm * ancho_cm * alto_cm) / Decimal('1000000')
+            costo = max(Decimal('500'), volumen_m3 * Decimal('5000'))
+
     return {
         "peso_volumetrico": peso_volumetrico,
         "peso_cobrable": peso_cobrable,

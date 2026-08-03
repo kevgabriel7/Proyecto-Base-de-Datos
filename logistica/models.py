@@ -403,3 +403,48 @@ class Zonas(models.Model):
         managed = False
         db_table = 'zonas'
         unique_together = (('id_ciudad', 'nombre'),)
+class MetodosEntrega(models.Model):
+    id_metodo_entrega = models.AutoField(primary_key=True)
+    nombre = models.CharField(unique=True, max_length=100)
+    descripcion = models.TextField(blank=True, null=True)
+    activo = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.nombre
+
+    class Meta:
+        managed = False
+        db_table = "metodos_entrega"
+
+
+class MetodosPago(models.Model):
+    id_metodo_pago = models.AutoField(primary_key=True)
+    nombre = models.CharField(unique=True, max_length=100)
+    requiere_comprobante = models.BooleanField(default=False)
+    activo = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.nombre
+
+    class Meta:
+        managed = False
+        db_table = "metodos_pago"
+
+
+class PagosFactura(models.Model):
+    id_pago = models.AutoField(primary_key=True)
+    id_factura = models.ForeignKey("Facturas", models.DO_NOTHING, db_column="id_factura")
+    id_metodo_pago = models.ForeignKey(MetodosPago, models.DO_NOTHING, db_column="id_metodo_pago")
+    id_metodo_entrega = models.ForeignKey(MetodosEntrega, models.DO_NOTHING, db_column="id_metodo_entrega")
+    monto_pagado = models.DecimalField(max_digits=12, decimal_places=2)
+    comprobante_url = models.CharField(max_length=255, blank=True, null=True)
+    estado_verificacion = models.CharField(max_length=50, default="Pendiente")
+    fecha_pago = models.DateTimeField(auto_now_add=True)
+    verificado_por = models.ForeignKey("Usuarios", models.DO_NOTHING, db_column="verificado_por", blank=True, null=True)
+
+    def __str__(self):
+        return f"Pago {self.id_pago} - Factura {self.id_factura.numero_factura}"
+
+    class Meta:
+        managed = False
+        db_table = "pagos_factura"

@@ -1,43 +1,135 @@
 {% extends 'logistica/base_cliente.html' %}
 
 {% block content %}
-<div class="container mt-5">
-  <h2>Crear cuenta de cliente</h2>
+<div class="container mt-5 mb-5">
+  <div class="row justify-content-center">
+    <div class="col-md-10 col-lg-8">
+      
+      <div class="text-center mb-4">
+        <h2 class="fw-bold"><i class="bi bi-person-plus-fill text-primary"></i> Crear cuenta de cliente</h2>
+        <p class="text-muted">Únete a nosotros y empieza a traer tus paquetes de todo el mundo.</p>
+      </div>
 
-  <form method="POST">
-    {% csrf_token %}
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
 
-    <div class="mb-3">
-      <label class="form-label">Nombre</label>
-      <input class="form-control" type="text" name="primer_nombre" required>
+      <div class="card shadow border-0" style="border-radius: 16px;">
+        <div class="card-body p-4 p-md-5">
+          <form method="POST">
+            {% csrf_token %}
+            
+            <h5 class="mb-3 border-bottom pb-2 text-primary"><i class="bi bi-person-badge"></i> Datos Personales</h5>
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Primer Nombre <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                  <input class="form-control" type="text" name="primer_nombre" placeholder="Ej. Juan" required>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Segundo Nombre</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                  <input class="form-control" type="text" name="segundo_nombre" placeholder="Opcional">
+                </div>
+              </div>
+              
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Primer Apellido <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                  <input class="form-control" type="text" name="primer_apellido" placeholder="Ej. Pérez" required>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Segundo Apellido</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                  <input class="form-control" type="text" name="segundo_apellido" placeholder="Opcional">
+                </div>
+              </div>
+            </div>
+
+            <h5 class="mb-3 border-bottom pb-2 text-primary"><i class="bi bi-building"></i> Empresa (Opcional)</h5>
+            <div class="row g-3 mb-4">
+              <div class="col-12">
+                <label class="form-label fw-semibold">Razón Social</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light"><i class="bi bi-briefcase"></i></span>
+                  <input class="form-control" type="text" name="razon_social" placeholder="Si eres empresa, ingresa el nombre aquí">
+                </div>
+              </div>
+            </div>
+
+            <h5 class="mb-3 border-bottom pb-2 text-primary"><i class="bi bi-geo-alt"></i> Contacto y Ubicación</h5>
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Teléfono</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light"><i class="bi bi-telephone"></i></span>
+                  <input class="form-control" type="text" name="telefono" placeholder="Ej. 9988-7766">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Ciudad <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light"><i class="bi bi-pin-map"></i></span>
+                  <select name="ciudad" class="form-select" required>
+                    <option value="" selected disabled>Selecciona tu ciudad...</option>
+                    {% for c in ciudades %}
+                      <option value="{{ c.id_ciudad }}">{{ c.nombre }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-semibold">Dirección</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light"><i class="bi bi-map"></i></span>
+                  <textarea class="form-control" name="direccion" rows="2" placeholder="Ej. Colonia Kennedy, Bloque 4..."></textarea>
+                </div>
+              </div>
+            </div>
+
+            <h5 class="mb-3 border-bottom pb-2 text-primary"><i class="bi bi-shield-lock"></i> Credenciales de Acceso</h5>
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Correo Electrónico <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light"><i class="bi bi-envelope"></i></span>
+                  <input class="form-control" type="email" name="email" placeholder="ejemplo@correo.com" required>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Contraseña <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light"><i class="bi bi-key"></i></span>
+                  <input class="form-control" type="password" name="password" placeholder="Mínimo 6 caracteres" required>
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 py-3 fw-bold rounded-pill shadow-sm" style="font-size: 1.1rem;">
+              <i class="bi bi-check2-circle me-1"></i> Completar Registro
+            </button>
+            
+            <div class="text-center mt-4">
+              <span class="text-muted">¿Ya tienes una cuenta?</span> 
+              <a href="{% url 'login' %}" class="text-primary fw-bold text-decoration-none">Inicia sesión aquí</a>
+            </div>
+
+          </form>
+        </div>
+      </div>
+      
     </div>
-
-    <div class="mb-3">
-      <label class="form-label">Apellido</label>
-      <input class="form-control" type="text" name="primer_apellido" required>
-    </div>
-
-    <div class="mb-3">
-      <label class="form-label">Correo</label>
-      <input class="form-control" type="email" name="email" required>
-    </div>
-
-    <div class="mb-3">
-      <label class="form-label">Teléfono</label>
-      <input class="form-control" type="text" name="telefono">
-    </div>
-
-    <div class="mb-3">
-      <label class="form-label">Dirección</label>
-      <textarea class="form-control" name="direccion"></textarea>
-    </div>
-
-    <div class="mb-3">
-      <label class="form-label">Contraseña</label>
-      <input class="form-control" type="password" name="password" required>
-    </div>
-
-    <button type="submit" class="btn btn-primary">Crear cuenta</button>
-  </form>
+  </div>
 </div>
 {% endblock %}

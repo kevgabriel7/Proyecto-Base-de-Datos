@@ -1,0 +1,66 @@
+{% extends 'logistica/base_empleado.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-3">
+        <div class="col-12">
+            <h2><i class="bi bi-shield-check text-success"></i> Verificación de Transferencias</h2>
+            <p class="text-muted">A continuación se muestran los pagos por transferencia que los clientes han reportado y requieren ser validados manualmente contra la cuenta bancaria.</p>
+        </div>
+    </div>
+
+    {% if pagos %}
+        <div class="row">
+            {% for pago in pagos %}
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 shadow-sm border-warning">
+                    <div class="card-header bg-warning bg-opacity-10">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Factura #{{ pago.id_factura.numero_factura }}</h5>
+                            <span class="badge bg-warning text-dark">{{ pago.estado_verificacion }}</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-1"><strong>Cliente:</strong> {{ pago.id_factura.nombre_cliente }}</p>
+                        <p class="mb-1"><strong>Fecha del Pago:</strong> {{ pago.fecha_pago|date:"d M Y, h:i a" }}</p>
+                        <p class="mb-3"><strong>Monto reportado:</strong> L. {{ pago.monto_pagado|floatformat:2|intcomma }}</p>
+
+                        {% if pago.comprobante_url %}
+                            <p class="fw-bold mb-2">Comprobante subido:</p>
+                            <div class="text-center mb-3">
+                                <a href="{{ pago.comprobante_url }}" target="_blank">
+
+                                    <img src="{{ pago.comprobante_url }}" class="img-fluid img-thumbnail" style="max-height: 200px; object-fit: contain;" alt="Comprobante">
+                                </a>
+                                <small class="d-block text-muted mt-1">(Clic para ampliar)</small>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-danger p-2">El cliente no subió imagen de comprobante.</div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer bg-white">
+                        <form method="POST" class="d-flex justify-content-between">
+                            {% csrf_token %}
+                            <input type="hidden" name="id_pago" value="{{ pago.pk }}">
+                            <button type="submit" name="accion" value="rechazar" class="btn btn-outline-danger">
+                                <i class="bi bi-x-circle"></i> Rechazar
+                            </button>
+                            <button type="submit" name="accion" value="aprobar" class="btn btn-success">
+                                <i class="bi bi-check-circle"></i> Aprobar Pago
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-success text-center p-5">
+            <i class="bi bi-emoji-smile fs-1"></i>
+            <h4 class="mt-3">¡Todo al día!</h4>
+            <p>No hay transferencias pendientes de validación en este momento.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

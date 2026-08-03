@@ -15,7 +15,10 @@ urlpatterns = [
     path('admin-portal/recepcion/', views.recepcion_paquetes, name='recepcion_paquetes'),
     path('admin-portal/tracking/', views.actualizar_rastreo, name='actualizar_rastreo'),
     path('admin-portal/caja/', views.facturacion_sar, name='facturacion_sar'),
-path("registro/",views.registro_cliente,name="registro_cliente"),
+    path("checkout/<uuid:tracking>/", views.checkout_envio, name="checkout_envio"),
+    path("admin-portal/auditar-paquetes/", views.auditar_paquetes, name="auditar_paquetes"),
+    path("admin-portal/verificar-pagos/", views.verificar_pagos, name="verificar_pagos"),
+    path("registro/",views.registro_cliente,name="registro_cliente"),
 path('programar-envio/',views.programar_envio,name='programar_envio'),
 path('programar-envio/', views.programar_envio,name='programar_envio'),
 

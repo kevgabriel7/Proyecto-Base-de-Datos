@@ -1,0 +1,96 @@
+{% extends 'logistica/base_empleado.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-3">
+        <div class="col-12">
+            <h2><i class="bi bi-box-seam text-primary"></i> Auditoría en Báscula</h2>
+            <p class="text-muted">Aquí se muestran los envíos programados por los clientes en línea. Ingrese el peso y dimensiones reales obtenidos en la báscula física para auditar el paquete y permitir que el cliente pague.</p>
+        </div>
+    </div>
+
+    {% if envios %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Tracking / Cliente</th>
+                        <th>Medidas (Cliente)</th>
+                        <th>Acción (Báscula Real)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for envio in envios %}
+                    {% with paquete=envio.paquetes_set.first %}
+                    <tr>
+                        <td>
+                            <strong>{{ envio.numero_tracking }}</strong><br>
+                            {{ envio.id_cliente.primer_nombre }} {{ envio.id_cliente.primer_apellido }}
+                        </td>
+                        <td>
+                            <small class="text-muted">L: {{ paquete.largo_cm }}cm | A: {{ paquete.ancho_cm }}cm | Al: {{ paquete.alto_cm }}cm<br>
+                            Peso: {{ paquete.peso_real_kg }} kg</small>
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modal-auditar-{{ envio.pk }}">
+                                <i class="bi bi-pencil-square"></i> Auditar Paquete
+                            </button>
+
+                            <!-- Modal -->
+                            <div class="modal fade" id="modal-auditar-{{ envio.pk }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Auditar: {{ envio.numero_tracking }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form method="POST">
+                                            {% csrf_token %}
+                                            <div class="modal-body">
+                                                <input type="hidden" name="id_envio" value="{{ envio.pk }}">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Peso Real en Báscula (kg)</label>
+                                                    <input type="number" step="0.01" class="form-control" name="peso_real" value="{{ paquete.peso_real_kg }}" required>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-4 mb-3">
+                                                        <label class="form-label">Largo (cm)</label>
+                                                        <input type="number" step="0.01" class="form-control" name="largo" value="{{ paquete.largo_cm }}" required>
+                                                    </div>
+                                                    <div class="col-4 mb-3">
+                                                        <label class="form-label">Ancho (cm)</label>
+                                                        <input type="number" step="0.01" class="form-control" name="ancho" value="{{ paquete.ancho_cm }}" required>
+                                                    </div>
+                                                    <div class="col-4 mb-3">
+                                                        <label class="form-label">Alto (cm)</label>
+                                                        <input type="number" step="0.01" class="form-control" name="alto" value="{{ paquete.alto_cm }}" required>
+                                                    </div>
+                                                </div>
+                                                <div class="alert alert-warning py-2 mb-0" style="font-size: 0.85rem;">
+                                                    <i class="bi bi-exclamation-triangle"></i> Al guardar, se recalculará el peso volumétrico y el estado cambiará a "Recibido en Bodega", permitiendo al cliente facturar y pagar.
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                <button type="submit" class="btn btn-primary">Guardar y Habilitar Pago</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endwith %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-success p-4 text-center">
+            <h4><i class="bi bi-check-circle"></i> Todo auditado</h4>
+            <p>No hay paquetes pendientes de pasar por la báscula física.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

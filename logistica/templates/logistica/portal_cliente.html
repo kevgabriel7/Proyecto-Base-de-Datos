@@ -59,63 +59,30 @@
             <i class="bi bi-globe-americas"></i> Tus Direcciones de Casillero en Miami
         </h5>
         <div class="accordion shadow-sm" id="accordionDirecciones" style="border-radius: 12px; overflow: hidden; border: 1px solid rgba(0,0,0,0.05);">
-
-            <div class="accordion-item border-0 border-bottom">
+            {% for via in vias %}
+            <div class="accordion-item border-0 {% if not forloop.last %}border-bottom{% endif %}">
                 <h2 class="accordion-header">
-                    <button class="accordion-button collapsed bg-white fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExpress">
-                        <i class="bi bi-rocket-takeoff-fill text-warning me-2"></i> Dirección Express (Requiere Pre-alerta)
+                    <button class="accordion-button {% if not forloop.first %}collapsed{% endif %} bg-white fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseVia{{ via.id_via }}" aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}">
+                        {% if via.nombre == "Aérea" %}
+                        <i class="bi bi-airplane-fill text-primary me-2"></i> Dirección {{ via.nombre }}
+                        {% else %}
+                        <i class="bi bi-ship-fill text-success me-2"></i> Dirección {{ via.nombre }}
+                        {% endif %}
                     </button>
                 </h2>
-                <div id="collapseExpress" class="accordion-collapse collapse" data-bs-parent="#accordionDirecciones">
+                <div id="collapseVia{{ via.id_via }}" class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" data-bs-parent="#accordionDirecciones">
                     <div class="accordion-body bg-light">
                         <p class="address-text mb-0">
-                            <strong>Nombre:</strong> EXPRESS EMPRESA {{ nombre_completo }}<br>
+                            <strong>Nombre:</strong> {{ via.nombre|upper }} EMPRESA {{ nombre_completo }}<br>
                             <strong>Dirección:</strong> {{ sucursal_miami.direccion|default:"8265 NW 74th Ave, Miami FL" }}<br>
-                            <strong>Línea 2:</strong> EXPRESS EMPRESA<br>
+                            <strong>Línea 2:</strong> {{ via.nombre|upper }} EMPRESA<br>
                             <strong>Ciudad:</strong> {{ sucursal_miami.id_ciudad.nombre|default:"Miami"|upper }}, Florida 33166<br>
                             <strong>Tel:</strong> {{ sucursal_miami.telefono|default:"+1 305 555 0100" }}
                         </p>
                     </div>
                 </div>
             </div>
-            <!-- Aéreo -->
-            <div class="accordion-item border-0 border-bottom">
-                <h2 class="accordion-header">
-                    <button class="accordion-button bg-white fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAereo" aria-expanded="true">
-                        <i class="bi bi-airplane-fill text-primary me-2"></i> Dirección Aéreo (Estándar)
-                    </button>
-                </h2>
-                <div id="collapseAereo" class="accordion-collapse collapse show" data-bs-parent="#accordionDirecciones">
-                    <div class="accordion-body bg-light">
-                        <p class="address-text mb-0">
-                            <strong>Nombre:</strong> AEREO EMPRESA {{ nombre_completo }}<br>
-                            <strong>Dirección:</strong> {{ sucursal_miami.direccion|default:"8265 NW 74th Ave, Miami FL" }}<br>
-                            <strong>Línea 2:</strong> AEREO EMPRESA<br>
-                            <strong>Ciudad:</strong> {{ sucursal_miami.id_ciudad.nombre|default:"Miami"|upper }}, Florida 33166<br>
-                            <strong>Tel:</strong> {{ sucursal_miami.telefono|default:"+1 305 555 0100" }}
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="accordion-item border-0">
-                <h2 class="accordion-header">
-                    <button class="accordion-button collapsed bg-white fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMaritimo">
-                        <i class="bi bi-ship-fill text-success me-2"></i> Dirección Marítimo (Económico)
-                    </button>
-                </h2>
-                <div id="collapseMaritimo" class="accordion-collapse collapse" data-bs-parent="#accordionDirecciones">
-                    <div class="accordion-body bg-light">
-                        <p class="address-text mb-0">
-                            <strong>Nombre:</strong> MARITIMO EMPRESA {{ nombre_completo }}<br>
-                            <strong>Dirección:</strong> {{ sucursal_miami.direccion|default:"8265 NW 74th Ave, Miami FL" }}<br>
-                            <strong>Línea 2:</strong> MARITIMO EMPRESA<br>
-                            <strong>Ciudad:</strong> {{ sucursal_miami.id_ciudad.nombre|default:"Miami"|upper }}, Florida 33166<br>
-                            <strong>Tel:</strong> {{ sucursal_miami.telefono|default:"+1 305 555 0100" }}
-                        </p>
-                    </div>
-                </div>
-            </div>
+            {% endfor %}
         </div>
     </div>
     

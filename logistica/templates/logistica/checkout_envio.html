@@ -1,0 +1,256 @@
+{% extends 'logistica/base_cliente.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Checkout y Pago de Envío</h4>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">Tracking: {{ envio.numero_tracking }}</h5>
+                    <p class="text-muted">Por favor completa la siguiente información para generar tu factura y pagar tu envío.</p>
+                    
+                    <div class="card border-success shadow-sm mb-4">
+                        <div class="card-header bg-success text-white d-flex align-items-center py-3">
+                            <i class="bi bi-shield-check fs-4 me-2"></i>
+                            <h5 class="mb-0">Transparencia de Cobro</h5>
+                        </div>
+                        <div class="card-body bg-light">
+                            {% with paquete=envio.paquetes_set.first %}
+                            <div class="row text-center mb-3">
+                                <div class="col-4 border-end">
+                                    <small class="text-muted d-block"><i class="bi bi-box"></i> Peso Físico</small>
+                                    <strong class="fs-5">{{ paquete.peso_real_kg|floatformat:2 }} Kg</strong>
+                                </div>
+                                <div class="col-4 border-end">
+                                    <small class="text-muted d-block"><i class="bi bi-arrows-fullscreen"></i> Volumétrico</small>
+                                    <strong class="fs-5">{{ paquete.peso_volumetrico_kg|floatformat:2 }} Kg</strong>
+                                </div>
+                                <div class="col-4">
+                                    <small class="text-primary fw-bold d-block"><i class="bi bi-check-circle-fill"></i> Peso Facturado</small>
+                                    <strong class="text-primary fs-5">{{ paquete.peso_cobrable_kg|floatformat:2 }} Kg</strong>
+                                </div>
+                            </div>
+                            <div class="text-center mb-3">
+                                <small class="text-muted" style="font-size: 0.75rem;">* El sistema siempre factura en base al mayor entre el peso físico y el peso volumétrico según las normas aéreas/marítimas internacionales.</small>
+                            </div>
+                            {% endwith %}
+                            
+                            <hr class="text-muted">
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <div>
+                                    <span class="text-muted d-block">Subtotal:</span>
+                                    <strong class="text-dark">L. {{ envio.costo_flete_hnl|floatformat:2|intcomma }}</strong>
+                                    {% if envio.descuento_hnl > 0 %}
+                                    <br><span class="text-muted d-block mt-1">Descuento:</span>
+                                    <strong class="text-danger">- L. {{ envio.descuento_hnl|floatformat:2|intcomma }}</strong>
+                                    {% endif %}
+                                    <br><span class="text-muted d-block mt-1">I.S.V (15%):</span>
+                                    <strong class="text-dark">L. {{ envio.costo_total_hnl|add:"-"|add:envio.costo_flete_hnl|add:envio.descuento_hnl|floatformat:2|intcomma }}</strong>
+                                </div>
+                                <div class="text-end">
+                                    <span class="d-block text-muted fw-bold">Total a Pagar</span>
+                                    <strong class="fs-2 text-success">L. {{ envio.costo_total_hnl|floatformat:2|intcomma }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="POST" enctype="multipart/form-data" id="checkout-form">
+                        {% csrf_token %}
+                        
+
+                        <h6 class="mt-4 mb-3 border-bottom pb-2">1. Selecciona el Método de Entrega</h6>
+                        <div class="row g-3 mb-2">
+                            {% for metodo in metodos_entrega %}
+                            <div class="col-md-4">
+                                <label class="card h-100 p-3 border cursor-pointer w-100" style="cursor: pointer;">
+                                    <div class="form-check">
+                                        <input class="form-check-input metodo-entrega-radio" type="radio" name="metodo_entrega" value="{{ metodo.pk }}" data-nombre="{{ metodo.nombre|lower }}" required>
+                                        <span class="fw-bold">{{ metodo.nombre }}</span>
+                                    </div>
+                                    <small class="text-muted d-block mt-2">{{ metodo.descripcion }}</small>
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mb-4 d-none" id="seccion_direccion_alterna">
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="check_direccion_alterna">
+                                <label class="form-check-label text-muted" for="check_direccion_alterna">Entregar en una dirección diferente a mi perfil</label>
+                            </div>
+                            <div class="collapse" id="collapseDireccion">
+                                <textarea name="direccion_alternativa" class="form-control" rows="2" placeholder="Ej. Edificio Torre Norte, Piso 4, Oficina 402"></textarea>
+                                <small class="text-info d-block mt-1" style="font-size: 0.75rem;">El repartidor usará esta dirección solo para este envío.</small>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4 d-none" id="seccion_sucursal_retiro">
+                            <label class="form-label fw-bold">¿En qué sucursal deseas recogerlo?</label>
+                            <select name="sucursal_retiro" class="form-select">
+                                <option value="" selected disabled>Selecciona una sucursal local...</option>
+                                {% for s in sucursales_locales %}
+                                    <option value="{{ s.id_sucursal }}">{{ s.nombre }} {% if s.id_ciudad.nombre %}({{ s.id_ciudad.nombre }}){% endif %}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <script>
+                            document.addEventListener("DOMContentLoaded", function() {
+                                const radiosEntrega = document.querySelectorAll(".metodo-entrega-radio");
+                                const seccionDireccion = document.getElementById("seccion_direccion_alterna");
+                                const checkAlterna = document.getElementById("check_direccion_alterna");
+                                const collapseDir = document.getElementById("collapseDireccion");
+                                const textDir = document.querySelector("textarea[name='direccion_alternativa']");
+
+                                const seccionSucursal = document.getElementById("seccion_sucursal_retiro");
+                                const selectSucursal = document.querySelector("select[name='sucursal_retiro']");
+
+                                radiosEntrega.forEach(radio => {
+                                    radio.addEventListener("change", function() {
+                                        const nombre = this.getAttribute("data-nombre");
+                                        if(nombre.includes("domicilio") || nombre.includes("express") || nombre.includes("delivery")) {
+                                            seccionDireccion.classList.remove("d-none");
+                                            seccionSucursal.classList.add("d-none");
+                                            selectSucursal.required = false;
+                                            selectSucursal.value = "";
+                                        } else {
+                                            seccionDireccion.classList.add("d-none");
+                                            checkAlterna.checked = false;
+                                            collapseDir.classList.remove("show");
+                                            textDir.value = "";
+                                            
+                                            // Asumimos que si no es domicilio, es recoger en sucursal
+                                            seccionSucursal.classList.remove("d-none");
+                                            selectSucursal.required = true;
+                                        }
+                                    });
+                                });
+
+                                checkAlterna.addEventListener("change", function() {
+                                    if(this.checked) {
+                                        collapseDir.classList.add("show");
+                                    } else {
+                                        collapseDir.classList.remove("show");
+                                        textDir.value = "";
+                                    }
+                                });
+                            });
+                        </script>
+
+
+                        <!-- Sección: Método de Pago -->
+                        <h6 class="mt-5 mb-3 border-bottom pb-2">2. Selecciona tu Método de Pago</h6>
+                        <div class="row g-3 mb-4">
+                            {% for metodo in metodos_pago %}
+                            <div class="col-md-6">
+                                <label class="card h-100 p-3 border cursor-pointer w-100" style="cursor: pointer;">
+                                    <div class="form-check">
+                                        <input class="form-check-input metodo-pago-radio" type="radio" name="metodo_pago" value="{{ metodo.pk }}" data-requiere-foto="{{ metodo.requiere_comprobante|yesno:'true,false' }}" required>
+                                        <span class="fw-bold">{{ metodo.nombre }}</span>
+                                    </div>
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <div id="formulario-tarjeta" class="mb-4 d-none">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="mb-3">Información de la Tarjeta</h6>
+                                    <div class="mb-3">
+                                        <label class="form-label">Nombre en la tarjeta</label>
+                                        <input type="text" class="form-control" placeholder="Ej. Juan Perez" id="tarjeta-nombre">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Número de tarjeta</label>
+                                        <input type="text" class="form-control" placeholder="0000 0000 0000 0000" id="tarjeta-numero" maxlength="16">
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-6 mb-3">
+                                            <label class="form-label">Vencimiento (MM/AA)</label>
+                                            <input type="text" class="form-control" placeholder="12/25" id="tarjeta-vencimiento" maxlength="5">
+                                        </div>
+                                        <div class="col-6 mb-3">
+                                            <label class="form-label">CVV</label>
+                                            <input type="text" class="form-control" placeholder="123" id="tarjeta-cvv" maxlength="3">
+                                        </div>
+                                    </div>
+                                    <small class="text-success"><i class="bi bi-shield-lock"></i> Sus datos no serán almacenados por políticas de seguridad PCI.</small>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <div id="formulario-transferencia" class="mb-4 d-none">
+                            <div class="card bg-light border-warning">
+                                <div class="card-body">
+                                    <h6 class="mb-3"><i class="bi bi-bank text-warning"></i> Instrucciones de Transferencia</h6>
+                                    <p class="mb-1">Transfiere el total exacto a la siguiente cuenta:</p>
+                                    <ul>
+                                        <li><strong>Banco:</strong> Banco Ficohsa</li>
+                                        <li><strong>Cuenta:</strong> 2000-1234-5678 (Ahorro)</li>
+                                        <li><strong>A nombre de:</strong> Envíos Rápidos S.A.</li>
+                                    </ul>
+                                    <div class="mb-3 mt-3">
+                                        <label class="form-label fw-bold">Sube la captura de tu comprobante:</label>
+                                        <input class="form-control" type="file" name="comprobante" id="comprobante-input" accept="image/*">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg" id="btn-pagar">Generar Factura y Pagar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const radios = document.querySelectorAll('.metodo-pago-radio');
+        const formTarjeta = document.getElementById('formulario-tarjeta');
+        const formTransfer = document.getElementById('formulario-transferencia');
+        const comprobanteInput = document.getElementById('comprobante-input');
+        
+        // Elementos de la tarjeta (para hacerlos requeridos o no dinámicamente)
+        const inputsTarjeta = [
+            document.getElementById('tarjeta-nombre'),
+            document.getElementById('tarjeta-numero'),
+            document.getElementById('tarjeta-vencimiento'),
+            document.getElementById('tarjeta-cvv')
+        ];
+
+        radios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                const requiereFoto = this.dataset.requiereFoto === 'true';
+                
+                if (requiereFoto) {
+                    // Seleccionó Transferencia
+                    formTransfer.classList.remove('d-none');
+                    formTarjeta.classList.add('d-none');
+                    
+                    comprobanteInput.setAttribute('required', 'required');
+                    inputsTarjeta.forEach(input => input.removeAttribute('required'));
+                    
+                } else {
+                    // Seleccionó Tarjeta
+                    formTarjeta.classList.remove('d-none');
+                    formTransfer.classList.add('d-none');
+                    
+                    comprobanteInput.removeAttribute('required');
+                    inputsTarjeta.forEach(input => input.setAttribute('required', 'required'));
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -56,8 +56,37 @@
             </div>
         </a>
     </div>
-</div>
 
+    <!-- Auditar Pesos -->
+    <div class="col-md-4">
+        <a href="{% url 'auditar_paquetes' %}" class="text-decoration-none">
+            <div class="card admin-card h-100 border-start border-danger border-4">
+                <div class="card-body py-5 px-4 text-center">
+                    <div class="bg-danger bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-4" style="width: 80px; height: 80px;">
+                        <i class="bi bi-ui-checks text-danger" style="font-size: 2rem;"></i>
+                    </div>
+                    <h5 class="card-title fw-bold text-dark">Auditar Pesos (Báscula)</h5>
+                    <p class="card-text text-muted small mt-3">Verifica peso y medidas físicas de paquetes web.</p>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Verificar Pagos -->
+    <div class="col-md-4">
+        <a href="{% url 'verificar_pagos' %}" class="text-decoration-none">
+            <div class="card admin-card h-100 border-start border-info border-4">
+                <div class="card-body py-5 px-4 text-center">
+                    <div class="bg-info bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-4" style="width: 80px; height: 80px;">
+                        <i class="bi bi-shield-check text-info" style="font-size: 2rem;"></i>
+                    </div>
+                    <h5 class="card-title fw-bold text-dark">Verificar Pagos</h5>
+                    <p class="card-text text-muted small mt-3">Aprueba o rechaza transferencias y depósitos.</p>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
 <div class="row mt-5">
     <div class="col-12">
         <div class="card border-0 shadow-sm rounded-4">

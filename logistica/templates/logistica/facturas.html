@@ -2,33 +2,90 @@
 {% load humanize %}
 
 {% block content %}
-<div class="facturas-header">
-    <a href="{% url 'portal_cliente' %}" class="back-btn-white">
-        <i class="bi bi-arrow-left"></i>
-    </a>
-    <h2 class="facturas-title">Facturas</h2>
-</div>
-
-<div>
-    {% if facturas %}
-        <div class="mb-3">
-            <h5 class="text-muted" style="font-size: 0.9rem;">Historial de facturación</h5>
+<div class="container mt-4 mb-5">
+    <div class="d-flex align-items-center mb-4">
+        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3 shadow-sm" style="width: 48px; height: 48px;">
+            <i class="bi bi-receipt fs-4"></i>
         </div>
-        {% for factura in facturas %}
-            <div class="factura-card">
-                <div class="factura-details">
-                    <h5>Factura #{{ factura.numero_factura }}</h5>
-                    <p><i class="bi bi-calendar-event"></i> {{ factura.fecha_emision|date:"d M Y" }}</p>
-                </div>
-                <div class="factura-total">
-                    L. {{ factura.total_hnl|floatformat:2|intcomma }}
+        <div>
+            <h3 class="fw-bold mb-0 text-dark">Mis Facturas</h3>
+            <p class="text-muted mb-0">Historial completo de facturación y cobros (SAR)</p>
+        </div>
+    </div>
+
+    {% if facturas %}
+        <div class="row g-4">
+            {% for factura in facturas %}
+            <div class="col-lg-6">
+                <div class="card shadow-sm border-0 h-100" style="border-radius: 12px; border-top: 4px solid #0d6efd !important;">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                            <h5 class="fw-bold text-dark mb-0">
+                                <i class="bi bi-file-earmark-text text-primary me-2"></i> {{ factura.numero_factura }}
+                            </h5>
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-3 py-2">
+                                <i class="bi bi-check-circle-fill me-1"></i> Pagada
+                            </span>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <small class="text-muted d-block">Fecha de Emisión</small>
+                                <span class="fw-semibold">{{ factura.fecha_emision|date:"d M Y, h:i A" }}</span>
+                            </div>
+                            <div class="col-6 text-end">
+                                <small class="text-muted d-block">CAI Autorizado</small>
+                                <span class="fw-semibold text-truncate d-inline-block w-100" style="font-size: 0.85rem;" title="Documento legal">
+                                    <i class="bi bi-shield-check text-primary"></i> Válido
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="bg-light rounded p-3 mb-3">
+                            <small class="fw-bold text-primary d-block mb-2">Detalle de Conceptos</small>
+                            {% for detalle in factura.facturadetalle_set.all %}
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-muted" style="font-size: 0.9rem;">
+                                        <i class="bi bi-box-seam me-1"></i> {{ detalle.descripcion|truncatechars:35 }}
+                                    </span>
+                                    <span class="fw-semibold">L. {{ detalle.subtotal_linea_hnl|floatformat:2|intcomma }}</span>
+                                </div>
+                            {% empty %}
+                                <div class="text-muted" style="font-size: 0.9rem;">Servicio de Logística</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted">Subtotal:</span>
+                            <span>L. {{ factura.subtotal_hnl|floatformat:2|intcomma }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted">ISV (15%):</span>
+                            <span>L. {{ factura.isv_hnl|floatformat:2|intcomma }}</span>
+                        </div>
+                        {% if factura.descuento_hnl > 0 %}
+                        <div class="d-flex justify-content-between mb-1 text-success">
+                            <span>Descuento:</span>
+                            <span>- L. {{ factura.descuento_hnl|floatformat:2|intcomma }}</span>
+                        </div>
+                        {% endif %}
+                        <hr class="my-2">
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <span class="fw-bold text-dark fs-5">TOTAL:</span>
+                            <span class="fw-bold text-primary fs-4">L. {{ factura.total_hnl|floatformat:2|intcomma }}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-        {% endfor %}
+            {% endfor %}
+        </div>
     {% else %}
-        <!-- Mensaje exacto de la imagen -->
-        <div class="empty-message">
-            No tiene facturas creadas.
+        <div class="text-center py-5">
+            <div class="bg-light rounded-circle d-inline-flex justify-content-center align-items-center mb-3" style="width: 80px; height: 80px;">
+                <i class="bi bi-receipt text-muted" style="font-size: 2.5rem;"></i>
+            </div>
+            <h4 class="fw-bold text-dark">No hay facturas</h4>
+            <p class="text-muted">Aún no tienes facturas generadas por el pago de envíos.</p>
         </div>
     {% endif %}
 </div>

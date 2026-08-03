@@ -1,3 +1,9 @@
+import uuid
+from decimal import Decimal
+from django.utils import timezone
+from django.contrib.auth.hashers import make_password
+from .services import calcular_tarifa_envio, generar_factura_automatica
+from .models import ViasEnvio, TiposServicio, EstadosEnvio, Rutas, Ciudades, TiposCliente
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login as django_login, logout as django_logout
 from django.contrib.auth.models import User
@@ -92,6 +98,9 @@ def portal_cliente(request):
             tipo_cliente = ""
         descuento = cliente.descuento_porcentaje
 
+    from .models import ViasEnvio
+    vias = ViasEnvio.objects.all()
+
     context = {
         'nombre_completo': nombre_completo,
         'direccion_local': direccion_local,
@@ -101,6 +110,7 @@ def portal_cliente(request):
         'tipo_cliente': tipo_cliente,
         'descuento': descuento,
         'sucursal_miami': sucursal_miami,
+        'vias': vias,
     }
     return render(request, 'logistica/portal_cliente.html', context)
 
@@ -108,10 +118,23 @@ def mis_paquetes(request):
     cliente = get_cliente_actual(request)
     if not cliente:
         return redirect('login')
-    from .models import Envios
+    from .models import Envios, FacturaDetalle, PagosFactura
 
     envios = Envios.objects.filter(id_cliente=cliente)
     
+    for e in envios:
+        e.pagado_o_en_proceso = False
+        e.mensaje_pago = ""
+        detalle = FacturaDetalle.objects.filter(id_envio=e).first()
+        if detalle:
+            pago = PagosFactura.objects.filter(id_factura=detalle.id_factura).exclude(estado_verificacion="Rechazado").first()
+            if pago:
+                e.pagado_o_en_proceso = True
+                if pago.estado_verificacion == "Pendiente":
+                    e.mensaje_pago = "Pago en Revisión"
+                else:
+                    e.mensaje_pago = "Pago Completado"
+                    
     context = {
         'paquetes': envios,
     }
@@ -174,7 +197,7 @@ def mis_datos(request):
             cliente.segundo_nombre = request.POST.get('segundo_nombre', '').strip()
             cliente.primer_apellido = request.POST.get('primer_apellido', '').strip()
             cliente.segundo_apellido = request.POST.get('segundo_apellido', '').strip()
-            cliente.rtn = request.POST.get('rtn', '').strip()
+            cliente.rtn = request.POST.get('rtn', '').strip() or None
             cliente.direccion = request.POST.get('direccion', '').strip()
             cliente.telefono = request.POST.get('telefono', '').strip()
             cliente.email = request.POST.get('email', '').strip()
@@ -213,19 +236,27 @@ def calculadora(request):
             # Volumen en cm3
             volumen_cm3 = largo_cm * ancho_cm * alto_cm
             
+            from .models import Tarifas
+            tarifa_db = Tarifas.objects.filter(id_via=id_via, activa=True).first()
+            
             if id_via == 1: # Aéreo
-
                 peso_volumetrico = volumen_cm3 / 5000.0
                 peso_cobrable = max(peso_kg, peso_volumetrico)
-
-                resultado_hnl = peso_cobrable * 125.0
+                
+                if tarifa_db:
+                    resultado_hnl = float(tarifa_db.precio_base_hnl) + (peso_cobrable * float(tarifa_db.precio_por_kg_hnl))
+                else:
+                    resultado_hnl = peso_cobrable * 125.0
                 
             else: # Marítimo
-
                 volumen_m3 = volumen_cm3 / 1000000.0
                 peso_volumetrico = volumen_m3 
 
-                resultado_hnl = volumen_m3 * 5000.0
+                if tarifa_db:
+                    resultado_hnl = float(tarifa_db.precio_base_hnl) + (volumen_m3 * float(tarifa_db.precio_por_m3_hnl))
+                else:
+                    resultado_hnl = volumen_m3 * 5000.0
+                    
                 if resultado_hnl < 500: 
                     resultado_hnl = 500.0
                     
@@ -477,7 +508,365 @@ def facturacion_sar(request):
             subtotal_linea_hnl=subtotal
         )
         
-        messages.success(request, f'Factura {nueva_factura.numero_factura} generada exitosamente.')
+        # Guardar el pago en efectivo (Físico)
+        from .models import PagosFactura, MetodosPago, MetodosEntrega, EstadosEnvio, Seguimiento
+        metodo_pago_efectivo = MetodosPago.objects.filter(nombre__icontains="Efectivo").first() or MetodosPago.objects.first()
+        metodo_entrega_local = MetodosEntrega.objects.first()
+        
+        PagosFactura.objects.create(
+            id_factura=nueva_factura,
+            id_metodo_pago=metodo_pago_efectivo,
+            id_metodo_entrega=metodo_entrega_local,
+            monto_pagado=total,
+            estado_verificacion="Aprobado",
+            verificado_por=cajero
+        )
+        
+        # Pasar a tránsito
+        estado_transito = EstadosEnvio.objects.get(pk=3)
+        envio.id_estado_actual = estado_transito
+        envio.save()
+        
+        Seguimiento.objects.create(
+            id_envio=envio,
+            id_estado=estado_transito,
+            id_usuario=cajero,
+            ubicacion_descripcion="Bodega Central (Despachado)"
+        )
+        
+        messages.success(request, f'Factura {nueva_factura.numero_factura} generada exitosamente. Envío en Tránsito.')
         return redirect('facturacion_sar')
         
     return render(request, "logistica/caja.html", context)
+
+def registro_cliente(request):
+    from .models import Ciudades, TiposCliente
+    # Solo mostrar ciudades locales excluyendo la id_ciudad=1 que es Miami
+    ciudades = Ciudades.objects.exclude(id_ciudad=1).exclude(nombre__icontains="Madrid").exclude(nombre__icontains="Texas")
+    if request.method == "POST":
+        primer_nombre = request.POST.get("primer_nombre", "").strip()
+        segundo_nombre = request.POST.get("segundo_nombre", "").strip()
+        primer_apellido = request.POST.get("primer_apellido", "").strip()
+        segundo_apellido = request.POST.get("segundo_apellido", "").strip()
+        razon_social = request.POST.get("razon_social", "").strip()
+        
+        email = request.POST.get("email", "").strip()
+        telefono = request.POST.get("telefono", "").strip()
+        direccion = request.POST.get("direccion", "").strip()
+        password = request.POST.get("password")
+        id_ciudad = request.POST.get("ciudad")
+        
+        if Clientes.objects.filter(email=email).exists():
+            messages.error(request, "Este correo electrónico ya está registrado.")
+            return render(request, "logistica/registro_cliente.html", {"ciudades": ciudades})
+
+        tipo_cliente = TiposCliente.objects.first()
+        
+        ciudad = None
+        if id_ciudad:
+            try:
+                ciudad = Ciudades.objects.get(pk=id_ciudad)
+            except Ciudades.DoesNotExist:
+                ciudad = Ciudades.objects.first()
+        else:
+            ciudad = Ciudades.objects.first()
+            
+        cliente = Clientes.objects.create(
+            id_tipo_cliente=tipo_cliente,
+            id_ciudad=ciudad,
+            razon_social=razon_social,
+            primer_nombre=primer_nombre,
+            segundo_nombre=segundo_nombre,
+            primer_apellido=primer_apellido,
+            segundo_apellido=segundo_apellido,
+            telefono=telefono,
+            direccion=direccion,
+            email=email,
+            password_hash=make_password(password),
+            activo=True,
+            descuento_porcentaje=Decimal("0")
+        )
+        messages.success(request, "Cuenta creada correctamente. ¡Bienvenido!")
+        return redirect("login")
+    return render(request, "logistica/registro_cliente.html", {"ciudades": ciudades})
+
+def programar_envio(request):
+    cliente = get_cliente_actual(request)
+    if not cliente:
+        return redirect("login")
+    if request.method == "POST":
+        id_via = request.POST.get("id_via")
+        id_tipo_servicio = request.POST.get("id_tipo_servicio")
+        descripcion = request.POST.get("descripcion")
+        largo = Decimal(request.POST.get("largo"))
+        ancho = Decimal(request.POST.get("ancho"))
+        alto = Decimal(request.POST.get("alto"))
+        peso = Decimal(request.POST.get("peso_real"))
+        valor_declarado = Decimal(request.POST.get("valor_declarado", "0"))
+        via = ViasEnvio.objects.get(pk=id_via)
+        servicio = TiposServicio.objects.get(pk=id_tipo_servicio)
+        estado = EstadosEnvio.objects.filter(nombre__icontains="pendiente").first() or EstadosEnvio.objects.first()
+        sucursal_miami = Sucursales.objects.filter(nombre__icontains="Miami").first()
+        sucursal_destino = Sucursales.objects.exclude(nombre__icontains="Miami").first()
+        if not sucursal_miami or not sucursal_destino:
+            messages.error(request, "No existen sucursales configuradas.")
+            return redirect("programar_envio")
+        ruta = Rutas.objects.first()
+        tarifa = Tarifas.objects.filter(id_via=via, id_tipo_servicio=servicio, activa=True).first()
+        if not tarifa:
+            # Hugo's dynamic calculator is used later, so just grab any valid tarifa to satisfy the DB constraint
+            tarifa = Tarifas.objects.first()
+            if not tarifa:
+                messages.error(request, "Contacte a soporte, la tabla de tarifas base está vacía.")
+                return redirect("programar_envio")
+        costo = tarifa.precio_base_hnl
+        ciudad_destino = cliente.id_ciudad if cliente.id_ciudad else sucursal_destino.id_ciudad
+        envio = Envios.objects.create(
+            numero_tracking=uuid.uuid4(),
+            id_cliente=cliente,
+            id_via=via,
+            id_tipo_servicio=servicio,
+            id_estado_actual=estado,
+            id_ciudad_origen=sucursal_miami.id_ciudad,
+            id_ciudad_destino=ciudad_destino,
+            id_sucursal_origen=sucursal_miami,
+            id_sucursal_destino=sucursal_destino,
+            id_ruta=ruta,
+            id_tarifa=tarifa,
+            nombre_remitente="CLIENTE",
+            nombre_destinatario=f"{cliente.primer_nombre or ''} {cliente.primer_apellido or ''}".strip(),
+            telefono_destinatario=cliente.telefono or "00000000",
+            direccion_destino=cliente.direccion or "Pendiente de completar",
+            valor_declarado_hnl=valor_declarado,
+            costo_flete_hnl=None,
+            descuento_hnl=Decimal("0"),
+            costo_total_hnl=None,
+            fecha_recepcion=timezone.now(),
+            creado_por=Usuarios.objects.first()
+        )
+        Paquetes.objects.create(
+            id_envio=envio,
+            numero_paquete=1,
+            descripcion_contenido=descripcion,
+            largo_cm=largo,
+            ancho_cm=ancho,
+            alto_cm=alto,
+            peso_real_kg=peso
+        )
+        # generar_factura_automatica(envio) # Desactivado para pago manual
+        messages.success(request, f"Solicitud creada correctamente. Tracking: {envio.numero_tracking}")
+        return redirect("portal_cliente")
+    context = {
+        "vias": ViasEnvio.objects.all(),
+        "servicios": TiposServicio.objects.all(),
+    }
+    return render(request, "logistica/programar_envio.html", context)
+
+from .models import MetodosEntrega, MetodosPago, PagosFactura
+from django.core.files.storage import FileSystemStorage
+
+def checkout_envio(request, tracking):
+    cliente = get_cliente_actual(request)
+    if not cliente:
+        return redirect("login")
+
+    envio = Envios.objects.filter(numero_tracking=tracking, id_cliente=cliente).first()
+    if not envio:
+        messages.error(request, "Envío no encontrado.")
+        return redirect("mis_paquetes")
+
+    # Verificar si ya tiene factura/pago
+    from .models import FacturaDetalle
+    detalle = FacturaDetalle.objects.filter(id_envio=envio).first()
+    if detalle:
+        pago_existente = PagosFactura.objects.filter(id_factura=detalle.id_factura).exclude(estado_verificacion="Rechazado").first()
+        if pago_existente:
+            if pago_existente.estado_verificacion == "Pendiente":
+                messages.warning(request, "Tu pago ya está en revisión.")
+            else:
+                messages.warning(request, "Este envío ya fue pagado.")
+            return redirect("mis_paquetes")
+
+    if envio.id_estado_actual.id_estado != 1 or not envio.costo_total_hnl:
+        messages.error(request, "Este envío no está habilitado para pago o aún no ha sido pesado.")
+        return redirect("mis_paquetes")
+
+    metodos_entrega = MetodosEntrega.objects.filter(activo=True)
+    metodos_pago = MetodosPago.objects.filter(activo=True)
+
+    if request.method == "POST":
+        id_metodo_entrega = request.POST.get("metodo_entrega")
+        id_metodo_pago = request.POST.get("metodo_pago")
+        direccion_alternativa = request.POST.get("direccion_alternativa")
+
+        metodo_entrega = MetodosEntrega.objects.get(pk=id_metodo_entrega)
+        metodo_pago = MetodosPago.objects.get(pk=id_metodo_pago)
+        
+        sucursal_retiro = request.POST.get("sucursal_retiro")
+        
+        if direccion_alternativa and direccion_alternativa.strip():
+            envio.direccion_destino = direccion_alternativa.strip()
+        elif sucursal_retiro:
+            try:
+                from .models import Sucursales
+                sucursal = Sucursales.objects.get(pk=sucursal_retiro)
+                envio.id_sucursal_destino = sucursal
+            except:
+                pass
+                
+        envio.save()
+
+        comprobante_url = None
+        if metodo_pago.requiere_comprobante and "comprobante" in request.FILES:
+            imagen = request.FILES["comprobante"]
+            fs = FileSystemStorage()
+            filename = fs.save(imagen.name, imagen)
+            comprobante_url = fs.url(filename)
+
+        # Reusar Factura si ya existe, o Generar una nueva
+        detalle_existente = FacturaDetalle.objects.filter(id_envio=envio).first()
+        if detalle_existente:
+            factura = detalle_existente.id_factura
+        else:
+            factura = generar_factura_automatica(envio)
+            if not factura:
+                messages.error(request, "Error generando la factura. Contacte soporte.")
+                return redirect("checkout_envio", tracking=tracking)
+
+        # Generar Pago
+        estado_verif = "Pendiente" if metodo_pago.requiere_comprobante else "Aprobado"
+        PagosFactura.objects.create(
+            id_factura=factura,
+            id_metodo_pago=metodo_pago,
+            id_metodo_entrega=metodo_entrega,
+            monto_pagado=factura.total_hnl,
+            comprobante_url=comprobante_url,
+            estado_verificacion=estado_verif
+        )
+
+        messages.success(request, "Pago registrado con éxito. ¡Gracias por preferirnos!")
+        return redirect("mis_paquetes")
+
+    from .models import Sucursales
+    sucursales_locales = Sucursales.objects.exclude(nombre__icontains="Miami").exclude(nombre__icontains="Hub")
+
+    context = {
+        "envio": envio,
+        "metodos_entrega": metodos_entrega,
+        "metodos_pago": metodos_pago,
+        "sucursales_locales": sucursales_locales
+    }
+    return render(request, "logistica/checkout_envio.html", context)
+
+def verificar_pagos(request):
+    if not request.user.is_authenticated or not request.user.is_staff:
+        return redirect("login")
+
+    if request.method == "POST":
+        id_pago = request.POST.get("id_pago")
+        accion = request.POST.get("accion") # aprobar o rechazar
+        pago = PagosFactura.objects.get(pk=id_pago)
+        empleado = Usuarios.objects.first() # mock empleado
+
+        if accion == "aprobar":
+            pago.estado_verificacion = "Aprobado"
+            pago.verificado_por = empleado
+            
+            # Pasar a tránsito
+            from .models import EstadosEnvio, Seguimiento, FacturaDetalle
+            detalle = FacturaDetalle.objects.filter(id_factura=pago.id_factura).first()
+            if detalle:
+                envio = detalle.id_envio
+                estado_transito = EstadosEnvio.objects.get(pk=3)
+                envio.id_estado_actual = estado_transito
+                envio.save()
+                
+                Seguimiento.objects.create(
+                    id_envio=envio,
+                    id_estado=estado_transito,
+                    id_usuario=empleado,
+                    ubicacion_descripcion="Verificación Web - Despachado a Tránsito",
+                    fecha_evento=timezone.now()
+                )
+                
+        elif accion == "rechazar":
+            pago.estado_verificacion = "Rechazado"
+            pago.verificado_por = empleado
+
+        pago.save()
+        messages.success(request, f"Pago {accion}do correctamente.")
+        return redirect("verificar_pagos")
+
+    pagos = PagosFactura.objects.filter(estado_verificacion="Pendiente").order_by("-fecha_pago")
+    return render(request, "logistica/verificar_pagos.html", {"pagos": pagos})
+
+def auditar_paquetes(request):
+    if not request.user.is_authenticated or not request.user.is_staff:
+        return redirect("login")
+
+    if request.method == "POST":
+        id_envio = request.POST.get("id_envio")
+        peso_real = request.POST.get("peso_real")
+        largo = request.POST.get("largo")
+        ancho = request.POST.get("ancho")
+        alto = request.POST.get("alto")
+
+        envio = Envios.objects.get(pk=id_envio)
+        paquete = Paquetes.objects.filter(id_envio=envio).first()
+
+        if paquete:
+            # Actualizar dimensiones y pesos
+            paquete.largo_cm = Decimal(largo)
+            paquete.ancho_cm = Decimal(ancho)
+            paquete.alto_cm = Decimal(alto)
+            paquete.peso_real_kg = Decimal(peso_real)
+
+            volumen = (paquete.largo_cm * paquete.ancho_cm * paquete.alto_cm) / Decimal(1000000)
+            paquete.peso_volumetrico_kg = (paquete.largo_cm * paquete.ancho_cm * paquete.alto_cm) / Decimal(5000)
+            paquete.peso_cobrable_kg = max(paquete.peso_real_kg, paquete.peso_volumetrico_kg)
+            paquete.save()
+
+            from .services import calcular_tarifa_envio
+            resultado = calcular_tarifa_envio(
+                peso_real=paquete.peso_real_kg,
+                largo_cm=paquete.largo_cm,
+                ancho_cm=paquete.ancho_cm,
+                alto_cm=paquete.alto_cm,
+                envio=envio
+            )
+            # Aplicar factor si tiene servicio express
+            costo_base = resultado["costo"]
+            if hasattr(envio.id_tipo_servicio, "factor_precio"):
+                costo_base = costo_base * envio.id_tipo_servicio.factor_precio
+                
+            # Calcular impuestos y descuentos igual que la factura SAR
+            cliente = envio.id_cliente
+            descuento_porcentaje = cliente.descuento_porcentaje or Decimal('0')
+            descuento = costo_base * descuento_porcentaje / Decimal('100')
+            base_gravable = costo_base - descuento
+            isv = base_gravable * Decimal('0.15')
+            
+            envio.costo_flete_hnl = costo_base
+            envio.descuento_hnl = descuento
+            envio.costo_total_hnl = base_gravable + isv
+
+            # Cambiar estado del envío a Recibido en Bodega (Auditoría Completada)
+            estado_auditado = EstadosEnvio.objects.get(pk=1) # Mantenemos en 1 para que el cliente pague
+            envio.id_estado_actual = estado_auditado
+            envio.save()
+
+            # Registrar evento de seguimiento
+            Seguimiento.objects.create(
+                id_envio=envio,
+                id_estado=estado_auditado,
+                ubicacion_descripcion="Bodega Central",
+                fecha_evento=timezone.now(),
+                id_usuario=Usuarios.objects.first()
+            )
+
+            messages.success(request, f"Paquete {envio.numero_tracking} auditado correctamente. El cliente ya puede pagar.")
+        return redirect("auditar_paquetes")
+
+    # Mostrar envíos en estado 1 (Recibidos por el sistema, sin auditar físicamente)
+    envios_pendientes = Envios.objects.filter(id_estado_actual__id_estado=1).order_by("-fecha_recepcion")
+    return render(request, "logistica/auditar_paquetes.html", {"envios": envios_pendientes})
